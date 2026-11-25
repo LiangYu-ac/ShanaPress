@@ -1,0 +1,36 @@
+name: Build & Test ShanaPress
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore & Build (Release)
+        run: dotnet build ShanaPress.sln -c Release
+
+      - name: Run Unit Tests
+        run: dotnet run --project tests/ShanaPress.Tests/ShanaPress.Tests.csproj -c Release --no-build -- --unit-only
+
+      - name: Publish Single-File Executable
+        run: dotnet publish src/ShanaPress.App/ShanaPress.App.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o dist
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShanaPress-win-x64
+          path: dist/ShanaPress.exe

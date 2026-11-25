@@ -1,0 +1,536 @@
+<Window x:Class="ShanaPress.App.Views.QuickSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Style="{StaticResource ThemedWindowStyle}"
+        Title="快速设置 (Quick Settings · F6)"
+        Width="900" Height="690"
+        MinWidth="800" MinHeight="590"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 6-Tab Encoding Parameter Sheet -->
+        <TabControl Grid.Row="0">
+            <!-- Tab 1: Container & General -->
+            <TabItem Header="封装与常规">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="6">
+                        <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="160"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="40"/>
+                                    <RowDefinition Height="40"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="输出封装格式:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <ComboBox Grid.Column="1"
+                                          ItemsSource="{Binding ContainerOptions}"
+                                          DisplayMemberPath="Display"
+                                          SelectedValuePath="Value"
+                                          SelectedValue="{Binding ContainerFormat}"
+                                          Width="280" HorizontalAlignment="Left"/>
+
+                                <TextBlock Grid.Row="1" Text="硬件解码加速:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <ComboBox Grid.Row="1" Grid.Column="1"
+                                          ItemsSource="{Binding HardwareDecodeOptions}"
+                                          DisplayMemberPath="Display"
+                                          SelectedValuePath="Value"
+                                          SelectedValue="{Binding HardwareDecode}"
+                                          Width="280" HorizontalAlignment="Left"/>
+                            </Grid>
+                        </Border>
+
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock Text="封装优化与元数据" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                                <CheckBox Content="MP4/MOV 启用 Web FastStart (-movflags +faststart，网页/微信秒开起播)" IsChecked="{Binding FastStart}" Margin="0,0,0,8"/>
+                                <CheckBox Content="保留原始媒体元数据与创建时间 (Metadata)" IsChecked="{Binding CopyMetadata}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Tab 2: Video Encoding -->
+            <TabItem Header="视频编码">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="6">
+                        <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="38"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="视频编码器:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <ComboBox Grid.Column="1"
+                                          ItemsSource="{Binding VideoCodecOptions}"
+                                          DisplayMemberPath="Display"
+                                          SelectedValuePath="Value"
+                                          SelectedValue="{Binding VideoCodec}"/>
+
+                                <StackPanel Grid.Row="1" Grid.ColumnSpan="2" IsEnabled="{Binding IsVideoEncoderConfigurable}" Margin="0,12,0,0">
+                                    <TextBlock Text="码率控制模式" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                    <WrapPanel Margin="0,0,0,10">
+                                        <RadioButton Content="CRF / CQ 恒定质量 (推荐)" IsChecked="{Binding IsCrfMode}" GroupName="RC" Margin="0,0,18,6"/>
+                                        <RadioButton Content="ABR 平均码率" IsChecked="{Binding IsAbrMode}" GroupName="RC" Margin="0,0,18,6"/>
+                                        <RadioButton Content="2-Pass 二压固定码率" IsChecked="{Binding IsTwoPassMode}" GroupName="RC" Margin="0,0,18,6"/>
+                                        <RadioButton Content="按目标文件大小 (MB)" IsChecked="{Binding IsTargetSizeMode}" GroupName="RC" Margin="0,0,0,6"/>
+                                    </WrapPanel>
+
+                                    <!-- CRF / CQ Controls -->
+                                    <StackPanel Visibility="{Binding IsCrfMode, Converter={StaticResource BoolToVis}}" Margin="0,0,0,10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Slider Minimum="0" Maximum="{Binding MaxQualitySlider}" Value="{Binding QualityValue}" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding QualityGuidanceText}" Margin="12,0,0,0" FontWeight="SemiBold" Foreground="{DynamicResource AccentSoftTextBrush}" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <!-- ABR / 2-Pass Bitrate Controls -->
+                                    <StackPanel Orientation="Horizontal" Visibility="{Binding IsBitrateMode, Converter={StaticResource BoolToVis}}" Margin="0,0,0,10">
+                                        <TextBlock Text="目标视频码率 (kbps):" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                        <TextBox Text="{Binding VideoBitrateKbps, UpdateSourceTrigger=PropertyChanged}" Width="110"/>
+                                        <TextBlock Text="(常用: 1080p 2500~6000 kbps)" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                    </StackPanel>
+
+                                    <!-- Target Size MB Controls -->
+                                    <StackPanel Visibility="{Binding IsTargetSizeMode, Converter={StaticResource BoolToVis}}" Margin="0,0,0,10">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                            <TextBlock Text="目标文件上限 (MB):" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                            <TextBox Text="{Binding TargetFileSizeMb, UpdateSourceTrigger=PropertyChanged}" Width="90" Margin="0,0,14,0"/>
+                                            <CheckBox Content="启用 2-Pass 精准控体积 (推荐)" IsChecked="{Binding TargetSizeUseTwoPass}"/>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding EstimatedTargetBitrateHint}" Foreground="{DynamicResource SuccessBrush}" FontWeight="SemiBold"/>
+                                    </StackPanel>
+
+                                    <!-- Preset / Profile / Pixel Format -->
+                                    <Grid Margin="0,4,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="12"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="12"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel>
+                                            <TextBlock Text="编码速度预设 (Preset)" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,4"/>
+                                            <ComboBox ItemsSource="{Binding EncoderPresetOptions}" DisplayMemberPath="Display" SelectedValuePath="Value" SelectedValue="{Binding Preset}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Profile 规格" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,4"/>
+                                            <ComboBox ItemsSource="{Binding VideoProfileOptions}" DisplayMemberPath="Display" SelectedValuePath="Value" SelectedValue="{Binding Profile}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="4">
+                                            <TextBlock Text="像素格式 (色深)" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,4"/>
+                                            <ComboBox ItemsSource="{Binding PixelFormatOptions}" DisplayMemberPath="Display" SelectedValuePath="Value" SelectedValue="{Binding PixelFormat}"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- NVENC Specific -->
+                                    <StackPanel Orientation="Horizontal" Visibility="{Binding IsNvencCodec, Converter={StaticResource BoolToVis}}" Margin="0,10,0,0">
+                                        <CheckBox Content="NVENC Spatial AQ (空间自适应量化，提升暗部/纹理画质)" IsChecked="{Binding NvencSpatialAq}" Margin="0,0,18,0"/>
+                                        <CheckBox Content="Temporal AQ (时间自适应量化)" IsChecked="{Binding NvencTemporalAq}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Resolution & Frame Rate -->
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="18"/>
+                                    <ColumnDefinition Width="260"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel>
+                                    <TextBlock Text="分辨率缩放" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                    <WrapPanel Margin="0,0,0,8">
+                                        <RadioButton Content="保持原分辨率" IsChecked="{Binding IsResizeOriginal}" GroupName="Resize" Margin="0,0,16,0"/>
+                                        <RadioButton Content="按预设高度" IsChecked="{Binding IsPresetHeightMode}" GroupName="Resize" Margin="0,0,16,0"/>
+                                        <RadioButton Content="自定义宽高" IsChecked="{Binding IsCustomResizeMode}" GroupName="Resize"/>
+                                    </WrapPanel>
+
+                                    <ComboBox ItemsSource="{Binding PresetHeightOptions}"
+                                              DisplayMemberPath="Display"
+                                              SelectedValuePath="Value"
+                                              SelectedValue="{Binding ResizeHeight}"
+                                              Visibility="{Binding IsPresetHeightMode, Converter={StaticResource BoolToVis}}"
+                                              Width="220" HorizontalAlignment="Left"/>
+
+                                    <StackPanel Orientation="Horizontal" Visibility="{Binding IsCustomResizeMode, Converter={StaticResource BoolToVis}}">
+                                        <TextBox Text="{Binding CustomWidth, UpdateSourceTrigger=PropertyChanged}" Width="80"/>
+                                        <TextBlock Text=" × " VerticalAlignment="Center" Margin="4,0"/>
+                                        <TextBox Text="{Binding CustomHeight, UpdateSourceTrigger=PropertyChanged}" Width="80" Margin="0,0,12,0"/>
+                                        <CheckBox Content="保持宽高比" IsChecked="{Binding KeepAspectRatio}"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="帧率控制 (FPS)" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <RadioButton Content="保持原帧率" IsChecked="{Binding IsOriginalFps}" GroupName="Fps" Margin="0,0,14,0"/>
+                                        <RadioButton Content="固定帧率" IsChecked="{Binding IsCustomFps}" GroupName="Fps"/>
+                                    </StackPanel>
+                                    <ComboBox ItemsSource="{Binding TargetFpsOptions}"
+                                              DisplayMemberPath="Display"
+                                              SelectedValuePath="Value"
+                                              SelectedValue="{Binding TargetFps}"
+                                              Visibility="{Binding IsCustomFps, Converter={StaticResource BoolToVis}}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Tab 3: Audio -->
+            <TabItem Header="音频编码">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="6">
+                        <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="150"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="40"/>
+                                    <RowDefinition Height="40"/>
+                                    <RowDefinition Height="40"/>
+                                    <RowDefinition Height="40"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="音频编码器:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <ComboBox Grid.Column="1" ItemsSource="{Binding AudioCodecOptions}" DisplayMemberPath="Display" SelectedValuePath="Value" SelectedValue="{Binding AudioCodec}" Width="260" HorizontalAlignment="Left"/>
+
+                                <TextBlock Grid.Row="1" Text="音频码率:" VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding AudioBitrateOptions}" DisplayMemberPath="Display" SelectedValuePath="Value" SelectedValue="{Binding AudioBitrateKbps}" Width="260" HorizontalAlignment="Left"/>
+
+                                <TextBlock Grid.Row="2" Text="采样率:" VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding SampleRateOptions}" DisplayMemberPath="Display" SelectedValuePath="Value" SelectedValue="{Binding SampleRate}" Width="260" HorizontalAlignment="Left"/>
+
+                                <TextBlock Grid.Row="3" Text="声道数:" VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding ChannelOptions}" DisplayMemberPath="Display" SelectedValuePath="Value" SelectedValue="{Binding AudioChannels}" Width="260" HorizontalAlignment="Left"/>
+                            </Grid>
+                        </Border>
+
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock Text="音量增益与响度处理" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="130"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="70"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="音量增益 (dB):" VerticalAlignment="Center"/>
+                                    <Slider Grid.Column="1" Minimum="-20" Maximum="20" Value="{Binding VolumeDb}" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding VolumeDb, StringFormat={}{0:+0.#;-0.#;0} dB}" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                </Grid>
+                                <CheckBox Content="启用 EBU R128 响度标准化 (loudnorm，自动平衡过轻或过响声音)" IsChecked="{Binding EnableLoudnorm}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Tab 4: Video Filters -->
+            <TabItem Header="画面与滤镜">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="6">
+                        <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,12">
+                            <StackPanel>
+                                <CheckBox Content="全局画面裁切 (Crop，单文件也可在“裁剪与预览”中独立覆盖)" IsChecked="{Binding CropEnabled}" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                                <Grid IsEnabled="{Binding CropEnabled}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="左 (px)" FontSize="11.5" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,3"/>
+                                        <TextBox Text="{Binding CropLeft, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="上 (px)" FontSize="11.5" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,3"/>
+                                        <TextBox Text="{Binding CropTop, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="4">
+                                        <TextBlock Text="右 (px)" FontSize="11.5" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,3"/>
+                                        <TextBox Text="{Binding CropRight, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="6">
+                                        <TextBlock Text="下 (px)" FontSize="11.5" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,3"/>
+                                        <TextBox Text="{Binding CropBottom, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="38"/>
+                                    <RowDefinition Height="38"/>
+                                    <RowDefinition Height="38"/>
+                                    <RowDefinition Height="38"/>
+                                    <RowDefinition Height="38"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="画面旋转与翻转:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <ComboBox ItemsSource="{Binding RotationOptions}" DisplayMemberPath="Display" SelectedValuePath="Value" SelectedValue="{Binding Rotation}" Width="180" Margin="0,0,16,0"/>
+                                    <CheckBox Content="水平镜像翻转" IsChecked="{Binding FlipHorizontal}" Margin="0,0,14,0"/>
+                                    <CheckBox Content="垂直上下翻转" IsChecked="{Binding FlipVertical}"/>
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="1" Text="去隔行扫描:" VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding DeinterlaceOptions}" DisplayMemberPath="Display" SelectedValuePath="Value" SelectedValue="{Binding DeinterlaceMode}" Width="240" HorizontalAlignment="Left"/>
+
+                                <TextBlock Grid.Row="2" Text="HDR → SDR 转换:" VerticalAlignment="Center"/>
+                                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <CheckBox Content="启用 HDR 色调映射 (防止发灰)" IsChecked="{Binding HdrToSdr}" Margin="0,0,14,0"/>
+                                    <ComboBox ItemsSource="{Binding TonemapOptions}" DisplayMemberPath="Display" SelectedValuePath="Value" SelectedValue="{Binding HdrTonemapAlgorithm}" Width="200" IsEnabled="{Binding HdrToSdr}"/>
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="3" Text="视频降噪 (hqdn3d):" VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding StrengthOptions}" DisplayMemberPath="Display" SelectedValuePath="Value" SelectedValue="{Binding DenoiseStrength}" Width="180" HorizontalAlignment="Left"/>
+
+                                <TextBlock Grid.Row="4" Text="画面锐化 (unsharp):" VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding StrengthOptions}" DisplayMemberPath="Display" SelectedValuePath="Value" SelectedValue="{Binding SharpenStrength}" Width="180" HorizontalAlignment="Left"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Tab 5: Subtitles & Watermark -->
+            <TabItem Header="字幕与水印">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="6">
+                        <!-- Subtitle -->
+                        <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="字幕处理 (SRT / ASS / 内嵌字幕)" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="处理方式:" VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Column="1" ItemsSource="{Binding SubtitleModeOptions}" DisplayMemberPath="Display" SelectedValuePath="Value" SelectedValue="{Binding SubtitleMode}"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="外挂字幕文件:" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" Text="{Binding SubtitleFilePath, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Button Grid.Column="2" Content="浏览..." Command="{Binding BrowseSubtitleCommand}" Style="{StaticResource ToolbarButtonStyle}" Margin="6,0,0,0"/>
+                                    <Button Grid.Column="3" Content="清除" Command="{Binding ClearSubtitleCommand}" Style="{StaticResource ToolbarButtonStyle}" Margin="6,0,0,0"/>
+                                </Grid>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="SRT 字体:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBox Text="{Binding SubtitleFontName, UpdateSourceTrigger=PropertyChanged}" Width="150" Margin="0,0,14,0"/>
+                                    <TextBlock Text="字号:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBox Text="{Binding SubtitleFontSize, UpdateSourceTrigger=PropertyChanged}" Width="55" Margin="0,0,14,0"/>
+                                    <TextBlock Text="描边:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBox Text="{Binding SubtitleOutline, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Image Watermark -->
+                        <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,12">
+                            <StackPanel>
+                                <CheckBox Content="启用图片水印 / 台标 (PNG 透明通道)" IsChecked="{Binding ImageWatermarkEnabled}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <StackPanel IsEnabled="{Binding ImageWatermarkEnabled}">
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Text="{Binding ImageWatermarkPath, UpdateSourceTrigger=PropertyChanged}"/>
+                                        <Button Grid.Column="1" Content="选择图片..." Command="{Binding BrowseImageWatermarkCommand}" Style="{StaticResource ToolbarButtonStyle}" Margin="8,0,0,0"/>
+                                    </Grid>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="180"/>
+                                            <ColumnDefinition Width="16"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="16"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="水印位置" FontSize="11.5" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,4"/>
+                                            <ComboBox ItemsSource="{Binding WatermarkPositionOptions}" DisplayMemberPath="Display" SelectedValuePath="Value" SelectedValue="{Binding WatermarkPosition}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="{Binding WatermarkScalePercent, StringFormat=宽度占比: {0}%}" FontSize="11.5" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,4"/>
+                                            <Slider Minimum="3" Maximum="50" Value="{Binding WatermarkScalePercent}" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="4">
+                                            <TextBlock Text="{Binding WatermarkOpacity, StringFormat=不透明度: {0:P0}}" FontSize="11.5" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,4"/>
+                                            <Slider Minimum="0.1" Maximum="1.0" Value="{Binding WatermarkOpacity}" TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Text Watermark -->
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <StackPanel>
+                                <CheckBox Content="启用文字水印 (drawtext)" IsChecked="{Binding TextWatermarkEnabled}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <StackPanel IsEnabled="{Binding TextWatermarkEnabled}">
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="10"/>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="10"/>
+                                            <ColumnDefinition Width="140"/>
+                                            <ColumnDefinition Width="10"/>
+                                            <ColumnDefinition Width="130"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Text="{Binding TextWatermarkContent, UpdateSourceTrigger=PropertyChanged}" ToolTip="输入水印文字"/>
+                                        <TextBox Grid.Column="2" Text="{Binding TextWatermarkFontSize, UpdateSourceTrigger=PropertyChanged}" ToolTip="字体大小"/>
+                                        <ComboBox Grid.Column="4" ItemsSource="{Binding WatermarkColorOptions}" DisplayMemberPath="Display" SelectedValuePath="Value" SelectedValue="{Binding TextWatermarkColor}"/>
+                                        <ComboBox Grid.Column="6" ItemsSource="{Binding WatermarkPositionOptions}" DisplayMemberPath="Display" SelectedValuePath="Value" SelectedValue="{Binding TextWatermarkPosition}"/>
+                                    </Grid>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding TextWatermarkOpacity, StringFormat=文字不透明度: {0:P0}}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                        <Slider Minimum="0.1" Maximum="1.0" Value="{Binding TextWatermarkOpacity}" Width="220" TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Tab 6: Presets & Advanced -->
+            <TabItem Header="预设与高级">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="6">
+                        <!-- Custom Preset Management -->
+                        <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="预设管理 (保存 / 导出 / 导入)" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox ItemsSource="{Binding Presets}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedPreset}"/>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0">
+                                        <Button Content="载入" Command="{Binding LoadPresetCommand}" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,6,0"/>
+                                        <Button Content="另存为新预设" Command="{Binding SaveNewPresetCommand}" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,6,0"/>
+                                        <Button Content="覆盖" Command="{Binding OverwritePresetCommand}" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,6,0"/>
+                                        <Button Content="删除" Command="{Binding DeletePresetCommand}" Style="{StaticResource DangerButtonStyle}" Margin="0,0,6,0"/>
+                                        <Button Content="导入" Command="{Binding ImportPresetCommand}" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,6,0"/>
+                                        <Button Content="导出" Command="{Binding ExportPresetCommand}" Style="{StaticResource ToolbarButtonStyle}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Custom FFmpeg Args -->
+                        <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="自定义额外 FFmpeg 输出参数 (高级用户)" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <TextBox Text="{Binding CustomExtraArgs, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" ToolTip="例如: -g 60 -bf 2"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Executable Paths & HW Re-detect -->
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock Text="FFmpeg 工具链与硬件状态" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <TextBlock Text="{Binding HardwareStatusSummary}" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="ffmpeg.exe 路径:" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" Text="{Binding CustomFfmpegPath, UpdateSourceTrigger=PropertyChanged}" ToolTip="留空自动搜索 PATH"/>
+                                    <Button Grid.Column="2" Content="浏览..." Command="{Binding BrowseFfmpegCommand}" Style="{StaticResource ToolbarButtonStyle}" Margin="6,0,0,0"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="ffprobe.exe 路径:" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" Text="{Binding CustomFfprobePath, UpdateSourceTrigger=PropertyChanged}" ToolTip="留空自动搜索 PATH"/>
+                                    <Button Grid.Column="2" Content="浏览..." Command="{Binding BrowseFfprobeCommand}" Style="{StaticResource ToolbarButtonStyle}" Margin="6,0,0,0"/>
+                                </Grid>
+
+                                <Button Content="重新检测 FFmpeg 与 GPU 硬件能力" Command="{Binding RedetectHardwareCommand}" Style="{StaticResource ToolbarButtonStyle}" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <!-- Pinned Live FFmpeg CLI Preview Strip -->
+        <Border Grid.Row="1" Style="{StaticResource CardBorderStyle}" Margin="0,12,0,0" Padding="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="实时命令:" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBox Grid.Column="1" Text="{Binding CliPreview, Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas" FontSize="11.5" BorderThickness="0" Background="Transparent"/>
+                <Button Grid.Column="2" Content="复制" Command="{Binding CopyCliCommand}" Style="{StaticResource ToolbarButtonStyle}" MinHeight="26" Padding="10,2" Margin="8,0,0,0"/>
+            </Grid>
+        </Border>
+
+        <!-- Dialog Footer -->
+        <Grid Grid.Row="2" Margin="0,12,0,0">
+            <Button Content="恢复默认设置" Command="{Binding ResetDefaultsCommand}" Style="{StaticResource ToolbarButtonStyle}" HorizontalAlignment="Left"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="取消" IsCancel="True" Style="{StaticResource ToolbarButtonStyle}" Width="96" Margin="0,0,10,0"/>
+                <Button Content="应用设置" Click="Apply_Click" IsDefault="True" Style="{StaticResource PrimaryButtonStyle}" Width="116"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>
