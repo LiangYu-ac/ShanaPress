@@ -184,29 +184,29 @@ jobs:
           $portableExe = "artifacts/release/ShanaPress-$($env:RELEASE_TAG)-win-x64-portable.exe"
           $sums = "artifacts/release/SHA256SUMS.txt"
 
-          $notes = @'
-## ShanaPress __TAG__ 正式发布
-
-现代化的 Windows GPU 批量视频压缩工具，原生支持 NVIDIA NVENC（H.264 / HEVC / AV1）、AMD AMF、Intel QSV 及 x264 / x265，内置深浅双主题界面与完整可视化裁剪功能。
-
-### 安装包说明
-
-| 文件 | 说明 | 运行前提 |
-| --- | --- | --- |
-| `ShanaPress-Setup-__TAG__-win-x64.exe` | **标准安装版（推荐）**：一键向导安装，支持桌面快捷方式与控制面板卸载 | **无需额外安装 .NET 或 FFmpeg**，开箱即用 |
-| `ShanaPress-__TAG__-win-x64-portable.exe` | **免安装单文件绿色版**：内置 .NET 8 运行时，双击即用 | 需系统 `PATH` 或同级目录已有 `ffmpeg.exe` / `ffprobe.exe` |
-
-### 主要特性
-- 拖拽批量入队与递归扫描，并发 `ffprobe` 解析 HDR / 音轨 / 字幕信息
-- **快速设置 (`F6`)**：支持 CRF/CQ、ABR、2-Pass 二压与按目标体积 (MB) 自动算码率
-- **可视化裁剪预览**：时间轴抽帧、`cropdetect` 一键自动去黑边、单文件独立字幕覆盖
-- **10 秒快速试压**：提前预估完整压缩后体积并支持直接试看画质
-- **高级滤镜**：BWDIF/YADIF 去隔行、HDR→SDR 色调映射（Hable/Mobius/Reinhard）、降噪锐化、SRT/ASS 硬字幕烧录、PNG 图片水印与中文文字水印
-
-> 提示：标准安装版在 `ffmpeg/` 子目录随附 [FFmpeg](https://ffmpeg.org/) GPL 构建二进制文件（对应开源许可详见随附 `FFMPEG-LICENSE.txt`）。
-'@.Replace("__TAG__", $env:RELEASE_TAG)
+          $noteLines = @(
+            "## ShanaPress $($env:RELEASE_TAG) 正式发布"
+            ""
+            "现代化的 Windows GPU 批量视频压缩工具，原生支持 NVIDIA NVENC（H.264 / HEVC / AV1）、AMD AMF、Intel QSV 及 x264 / x265，内置深浅双主题界面与完整可视化裁剪功能。"
+            ""
+            "### 安装包说明"
+            ""
+            "| 文件 | 说明 | 运行前提 |"
+            "| --- | --- | --- |"
+            "| ``ShanaPress-Setup-$($env:RELEASE_TAG)-win-x64.exe`` | **标准安装版（推荐）**：一键向导安装，支持桌面快捷方式与控制面板卸载 | **无需额外安装 .NET 或 FFmpeg**，开箱即用 |"
+            "| ``ShanaPress-$($env:RELEASE_TAG)-win-x64-portable.exe`` | **免安装单文件绿色版**：内置 .NET 8 运行时，双击即用 | 需系统 ``PATH`` 或同级目录已有 ``ffmpeg.exe`` / ``ffprobe.exe`` |"
+            ""
+            "### 主要特性"
+            "- 拖拽批量入队与递归扫描，并发 ``ffprobe`` 解析 HDR / 音轨 / 字幕信息"
+            "- **快速设置 (``F6``)**：支持 CRF/CQ、ABR、2-Pass 二压与按目标体积 (MB) 自动算码率"
+            "- **可视化裁剪预览**：时间轴抽帧、``cropdetect`` 一键自动去黑边、单文件独立字幕覆盖"
+            "- **10 秒快速试压**：提前预估完整压缩后体积并支持直接试看画质"
+            "- **高级滤镜**：BWDIF/YADIF 去隔行、HDR→SDR 色调映射（Hable/Mobius/Reinhard）、降噪锐化、SRT/ASS 硬字幕烧录、PNG 图片水印与中文文字水印"
+            ""
+            "> 提示：标准安装版在 ``ffmpeg/`` 子目录随附 [FFmpeg](https://ffmpeg.org/) GPL 构建二进制文件（对应开源许可详见随附 ``FFMPEG-LICENSE.txt``）。"
+          )
           $notesFile = "artifacts/release/RELEASE_NOTES.md"
-          [System.IO.File]::WriteAllText($notesFile, $notes, [System.Text.UTF8Encoding]::new($false))
+          [System.IO.File]::WriteAllText($notesFile, ($noteLines -join "`n"), [System.Text.UTF8Encoding]::new($false))
 
           gh release view "$($env:RELEASE_TAG)" 2>$null | Out-Null
           if ($LASTEXITCODE -eq 0) {

@@ -16,7 +16,7 @@
 
 ## 下载与安装
 
-前往 [GitHub Releases 最新版本页面](https://github.com/maruiyuan914-ai/ShanaPress/releases/latest) 下载：
+前往 [GitHub Releases 最新版本页面](https://github.com/LiangYu-ac/ShanaPress/releases/latest) 下载：
 
 - **标准安装版 (`ShanaPress-Setup-v*-win-x64.exe`，推荐)**：内置 .NET 8 运行时与 FFmpeg 核心组件，支持安装向导、桌面快捷方式与常规卸载，**下载安装即可直接使用**。
 - **绿色便携版 (`ShanaPress-v*-win-x64-portable.exe`)**：内置 .NET 8 运行时的单文件程序，无需安装即可运行（需在 `PATH` 或同级目录放置 `ffmpeg.exe` / `ffprobe.exe`）。
