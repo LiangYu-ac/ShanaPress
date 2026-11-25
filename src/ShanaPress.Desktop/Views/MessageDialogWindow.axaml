@@ -1,0 +1,15 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ShanaPress.Desktop.Views.MessageDialogWindow"
+        Icon="avares://ShanaPress/Assets/app.ico"
+        Width="440" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <StackPanel Margin="20" Spacing="16">
+        <TextBlock x:Name="MessageText" TextWrapping="Wrap" LineHeight="20"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+            <Button x:Name="NoButton" Content="取消" Classes="toolbar-btn" Width="88" IsVisible="False" Click="No_Click"/>
+            <Button x:Name="OkButton" Content="确定" Classes="primary-btn" Width="92" IsDefault="True" Click="Ok_Click"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

@@ -436,7 +436,7 @@ public sealed class MainViewModel : ObservableObject
     {
         HardwareBadgeText = "正在检测 FFmpeg 与 GPU 硬件加速...";
         _capabilities = await HardwareDetector.DetectAsync(_settings.CustomFfmpegPath, _settings.CustomFfprobePath);
-        HasWorkingHwEncoder = _capabilities.HasAnyNvenc || _capabilities.HasAnyAmf || _capabilities.HasAnyQsv;
+        HasWorkingHwEncoder = _capabilities.HasAnyHardwareEncoder;
         HardwareBadgeText = _capabilities.BuildBadgeText();
 
         // If current active profile uses a GPU codec that doesn't work on this machine, fall back cleanly on first run

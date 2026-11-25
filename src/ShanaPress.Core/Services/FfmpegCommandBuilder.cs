@@ -145,8 +145,9 @@ public static class FfmpegCommandBuilder
 
         if (isTrueTwoPass)
         {
+            var nullTarget = OperatingSystem.IsWindows() ? "NUL" : "/dev/null";
             var pass1Args = BuildPassArguments(
-                profile, item.SourcePath, "NUL", mediaInfo,
+                profile, item.SourcePath, nullTarget, mediaInfo,
                 trimEnabled || isSampleMode, startSec, sampleDurationSec ?? (trimEnabled && trimEnd > startSec ? effectiveDuration : null),
                 hasHardsubBurnIn, filterGraph, subMode, computedBitrateKbps,
                 passNumber: 1, passLogPrefix: tempPassPrefix, includeProgress: true, overwriteOutput: true);
@@ -226,10 +227,16 @@ public static class FfmpegCommandBuilder
             args.Add("-y");
         }
 
-        // Hardware decode (only when not copying video stream, never force hwaccel_output_format cuda when software filters exist)
+        // Hardware decode / VAAPI device initialization
+        if (!profile.IsVideoDisabled && !profile.IsVideoCopy && profile.VideoCodec.Contains("vaapi", StringComparison.OrdinalIgnoreCase))
+        {
+            args.Add("-vaapi_device");
+            args.Add("/dev/dri/renderD128");
+        }
+
         if (!profile.IsVideoDisabled && !profile.IsVideoCopy && !string.Equals(profile.HardwareDecode, "off", StringComparison.OrdinalIgnoreCase))
         {
-            if (profile.HardwareDecode is "auto" or "cuda" or "d3d11va")
+            if (profile.HardwareDecode is "auto" or "cuda" or "d3d11va" or "videotoolbox" or "vaapi")
             {
                 args.Add("-hwaccel");
                 args.Add(profile.HardwareDecode);
@@ -455,6 +462,8 @@ public static class FfmpegCommandBuilder
         var isNvenc = codec.Contains("nvenc", StringComparison.OrdinalIgnoreCase);
         var isAmf = codec.Contains("amf", StringComparison.OrdinalIgnoreCase);
         var isQsv = codec.Contains("qsv", StringComparison.OrdinalIgnoreCase);
+        var isVideoToolbox = codec.Contains("videotoolbox", StringComparison.OrdinalIgnoreCase);
+        var isVaapi = codec.Contains("vaapi", StringComparison.OrdinalIgnoreCase);
         var isAv1OrVp9 = codec.Contains("av1", StringComparison.OrdinalIgnoreCase) || codec.Contains("vp9", StringComparison.OrdinalIgnoreCase);
 
         if (isNvenc)
@@ -544,6 +553,43 @@ public static class FfmpegCommandBuilder
                 args.Add($"{computedBitrateKbps}k");
             }
         }
+        else if (isVideoToolbox)
+        {
+            if (profile.RateControlMode == RateControlMode.CrfOrCq)
+            {
+                // VideoToolbox quality scale is 1..100 (higher = better quality)
+                var vtQ = Math.Clamp(100 - (int)Math.Round(profile.QualityValue * 1.65), 15, 95);
+                args.Add("-q:v");
+                args.Add(vtQ.ToString(CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                args.Add("-b:v");
+                args.Add($"{computedBitrateKbps}k");
+            }
+
+            args.Add("-allow_sw");
+            args.Add("1");
+
+            if (codec.Equals("hevc_videotoolbox", StringComparison.OrdinalIgnoreCase))
+            {
+                args.Add("-tag:v");
+                args.Add("hvc1");
+            }
+        }
+        else if (isVaapi)
+        {
+            if (profile.RateControlMode == RateControlMode.CrfOrCq)
+            {
+                args.Add("-qp");
+                args.Add(Math.Clamp(profile.QualityValue, 1, 51).ToString(CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                args.Add("-b:v");
+                args.Add($"{computedBitrateKbps}k");
+            }
+        }
         else
         {
             // Software encoders: libx264, libx265, libvpx-vp9, libaom-av1
@@ -599,7 +645,8 @@ public static class FfmpegCommandBuilder
         }
 
         if (!string.IsNullOrWhiteSpace(profile.PixelFormat) &&
-            !profile.PixelFormat.Equals("auto", StringComparison.OrdinalIgnoreCase))
+            !profile.PixelFormat.Equals("auto", StringComparison.OrdinalIgnoreCase) &&
+            !isVaapi)
         {
             args.Add("-pix_fmt");
             args.Add(profile.PixelFormat);
@@ -622,7 +669,13 @@ public static class FfmpegCommandBuilder
 
         var stem = Path.GetFileNameWithoutExtension(sourcePath);
         var template = string.IsNullOrWhiteSpace(profile.FileNameTemplate) ? "{name}_compressed" : profile.FileNameTemplate.Trim();
-        var shortCodec = profile.VideoCodec.Replace("_nvenc", "").Replace("_amf", "").Replace("_qsv", "").Replace("lib", "");
+        var shortCodec = profile.VideoCodec
+            .Replace("_nvenc", "")
+            .Replace("_amf", "")
+            .Replace("_qsv", "")
+            .Replace("_videotoolbox", "")
+            .Replace("_vaapi", "")
+            .Replace("lib", "");
 
         var baseName = template
             .Replace("{name}", stem, StringComparison.OrdinalIgnoreCase)

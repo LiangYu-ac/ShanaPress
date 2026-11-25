@@ -10,7 +10,7 @@
     <RootNamespace>ShanaPress.App</RootNamespace>
     <ApplicationTitle>ShanaPress</ApplicationTitle>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Product>ShanaPress</Product>
     <Description>Modern GPU-Accelerated Batch Video Compressor</Description>
   </PropertyGroup>

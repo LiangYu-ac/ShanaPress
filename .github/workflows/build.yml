@@ -8,8 +8,25 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: windows-latest
+  ci:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: ShanaPress.sln
+            rid: win-x64
+            proj: src/ShanaPress.App/ShanaPress.App.csproj
+          - os: ubuntu-latest
+            target: src/ShanaPress.Desktop/ShanaPress.Desktop.csproj
+            rid: linux-x64
+            proj: src/ShanaPress.Desktop/ShanaPress.Desktop.csproj
+          - os: macos-latest
+            target: src/ShanaPress.Desktop/ShanaPress.Desktop.csproj
+            rid: osx-arm64
+            proj: src/ShanaPress.Desktop/ShanaPress.Desktop.csproj
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout repository
@@ -21,16 +38,9 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore & Build (Release)
-        run: dotnet build ShanaPress.sln -c Release
+        run: |
+          dotnet build "${{ matrix.target }}" -c Release
+          dotnet build tests/ShanaPress.Tests/ShanaPress.Tests.csproj -c Release
 
-      - name: Run Unit Tests
+      - name: Run Core Unit Tests
         run: dotnet run --project tests/ShanaPress.Tests/ShanaPress.Tests.csproj -c Release --no-build -- --unit-only
-
-      - name: Publish Single-File Executable
-        run: dotnet publish src/ShanaPress.App/ShanaPress.App.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o dist
-
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ShanaPress-win-x64
-          path: dist/ShanaPress.exe

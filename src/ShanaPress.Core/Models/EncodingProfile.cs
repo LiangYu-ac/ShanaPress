@@ -141,6 +141,11 @@ public sealed class EncodingProfile
                 "h264_qsv" => "H.264 QSV",
                 "hevc_qsv" => "HEVC QSV",
                 "av1_qsv" => "AV1 QSV",
+                "h264_videotoolbox" => "H.264 VideoToolbox",
+                "hevc_videotoolbox" => "HEVC VideoToolbox",
+                "h264_vaapi" => "H.264 VAAPI",
+                "hevc_vaapi" => "HEVC VAAPI",
+                "av1_vaapi" => "AV1 VAAPI",
                 "libx264" => "x264",
                 "libx265" => "x265",
                 "libaom-av1" => "libaom AV1",
@@ -150,7 +155,10 @@ public sealed class EncodingProfile
 
             var rcLabel = RateControlMode switch
             {
-                RateControlMode.CrfOrCq => VideoCodec.Contains("nvenc") ? $"CQ{QualityValue}" : $"CRF{QualityValue}",
+                RateControlMode.CrfOrCq => VideoCodec.Contains("nvenc") ? $"CQ{QualityValue}"
+                    : VideoCodec.Contains("vaapi") ? $"QP{QualityValue}"
+                    : VideoCodec.Contains("videotoolbox") ? $"Q{QualityValue}"
+                    : $"CRF{QualityValue}",
                 RateControlMode.AverageBitrate => $"{VideoBitrateKbps}k",
                 RateControlMode.TwoPassBitrate => $"{VideoBitrateKbps}k 2-Pass",
                 RateControlMode.TargetFileSize => $"目标 {TargetFileSizeMb:0.#}MB",

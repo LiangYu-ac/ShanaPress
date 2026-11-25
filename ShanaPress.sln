@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShanaPress.Core", "src\Shan
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShanaPress.App", "src\ShanaPress.App\ShanaPress.App.csproj", "{C8F5E4A2-2B3C-4D4E-AF50-222222222222}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShanaPress.Desktop", "src\ShanaPress.Desktop\ShanaPress.Desktop.csproj", "{E1B7A6C4-4D5E-4F60-C172-444444444444}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShanaPress.Tests", "tests\ShanaPress.Tests\ShanaPress.Tests.csproj", "{D9A6F5B3-3C4D-4E5F-B061-333333333333}"
 EndProject
 Global
@@ -23,12 +25,14 @@ Global
 		{C8F5E4A2-2B3C-4D4E-AF50-222222222222}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C8F5E4A2-2B3C-4D4E-AF50-222222222222}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C8F5E4A2-2B3C-4D4E-AF50-222222222222}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E1B7A6C4-4D5E-4F60-C172-444444444444}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E1B7A6C4-4D5E-4F60-C172-444444444444}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1B7A6C4-4D5E-4F60-C172-444444444444}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E1B7A6C4-4D5E-4F60-C172-444444444444}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D9A6F5B3-3C4D-4E5F-B061-333333333333}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D9A6F5B3-3C4D-4E5F-B061-333333333333}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D9A6F5B3-3C4D-4E5F-B061-333333333333}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D9A6F5B3-3C4D-4E5F-B061-333333333333}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
+	GlobalSection(SolutionProperties) = HideSolutionNode = FALSE
 EndGlobal

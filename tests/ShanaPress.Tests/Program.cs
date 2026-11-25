@@ -28,6 +28,7 @@ internal static class Program
             Run("Unit: FfmpegCommandBuilder codecs, 2-pass, NVENC, AMF, Trim/Sub & safety", () => TestCommandBuilder(tempRoot));
             Run("Unit: ProgressParser 1-pass and 2-pass progress & ETA", TestProgressParser);
             Run("Unit: PresetRepository built-ins & JSON round-trip", () => TestPresetRepository(tempRoot));
+            Run("Unit: Cross-platform VideoToolbox, VAAPI, capabilities & presets", () => TestCrossPlatformEncodersAndPresets(tempRoot));
 
             if (unitOnly)
             {
@@ -267,8 +268,9 @@ internal static class Program
             CustomOutputDirectory = tempRoot
         };
         var plan2 = FfmpegCommandBuilder.BuildJobPlan(p2, item);
+        var nullSink = OperatingSystem.IsWindows() ? "NUL" : "/dev/null";
         Assert(plan2.IsTwoPass, "x265 target size should use 2-pass");
-        Assert(plan2.Pass1Arguments.Contains("-pass") && plan2.Pass1Arguments.Contains("NUL") && plan2.Pass1Arguments.Contains("-an"),
+        Assert(plan2.Pass1Arguments.Contains("-pass") && plan2.Pass1Arguments.Contains(nullSink) && plan2.Pass1Arguments.Contains("-an"),
             "Pass 1 args invalid");
         Assert(plan2.Pass2Arguments.Contains("-pass") && plan2.Pass2Arguments.Contains("-passlogfile"),
             "Pass 2 args invalid");
@@ -728,6 +730,130 @@ internal static class Program
         {
             throw new InvalidOperationException(message);
         }
+    }
+
+    private static void TestCrossPlatformEncodersAndPresets(string tempRoot)
+    {
+        var input = Path.Combine(tempRoot, "cross_demo.mp4");
+        File.WriteAllBytes(input, [0]);
+        var wmFile = Path.Combine(tempRoot, "wm_vaapi.png");
+        File.WriteAllBytes(wmFile, [1, 2, 3]);
+        var item = new QueueItem(input, 50_000_000)
+        {
+            MediaInfo = new MediaInfo
+            {
+                FilePath = input,
+                Duration = TimeSpan.FromSeconds(60),
+                VideoStream = new VideoStreamInfo { Width = 1920, Height = 1080, CodecName = "h264" },
+                AudioStreams = [new AudioStreamInfo { CodecName = "aac", Channels = 2 }]
+            }
+        };
+
+        // 1. Apple VideoToolbox HEVC & H.264 (QualityValue uses CRF/CQ scale 1..51 -> mapped to VideoToolbox 15..95)
+        var pVtHevc = new EncodingProfile
+        {
+            ContainerFormat = "mp4",
+            VideoCodec = "hevc_videotoolbox",
+            RateControlMode = RateControlMode.CrfOrCq,
+            QualityValue = 25,
+            OutputDirectoryMode = OutputDirectoryMode.CustomFolder,
+            CustomOutputDirectory = tempRoot
+        };
+        var planVtHevc = FfmpegCommandBuilder.BuildJobPlan(pVtHevc, item);
+        var vtHevcCmd = string.Join(' ', planVtHevc.Pass2Arguments);
+        Assert(vtHevcCmd.Contains("-q:v 59", StringComparison.Ordinal),
+            $"VideoToolbox HEVC should emit -q:v 59: {vtHevcCmd}");
+        Assert(vtHevcCmd.Contains("-allow_sw 1", StringComparison.Ordinal) && vtHevcCmd.Contains("-tag:v hvc1", StringComparison.Ordinal),
+            $"VideoToolbox HEVC should emit -allow_sw 1 and -tag:v hvc1: {vtHevcCmd}");
+
+        var pVtH264 = new EncodingProfile
+        {
+            ContainerFormat = "mp4",
+            VideoCodec = "h264_videotoolbox",
+            RateControlMode = RateControlMode.CrfOrCq,
+            QualityValue = 23,
+            OutputDirectoryMode = OutputDirectoryMode.CustomFolder,
+            CustomOutputDirectory = tempRoot
+        };
+        var planVtH264 = FfmpegCommandBuilder.BuildJobPlan(pVtH264, item);
+        var vtH264Cmd = string.Join(' ', planVtH264.Pass2Arguments);
+        Assert(vtH264Cmd.Contains("-q:v 62", StringComparison.Ordinal) && vtH264Cmd.Contains("-allow_sw 1", StringComparison.Ordinal) &&
+               !vtH264Cmd.Contains("hvc1", StringComparison.Ordinal),
+            $"VideoToolbox H.264 flags mismatch: {vtH264Cmd}");
+
+        // 2. Linux VAAPI HEVC simple filter + no -pix_fmt
+        var pVaapi = new EncodingProfile
+        {
+            ContainerFormat = "mp4",
+            VideoCodec = "hevc_vaapi",
+            RateControlMode = RateControlMode.CrfOrCq,
+            QualityValue = 25,
+            OutputDirectoryMode = OutputDirectoryMode.CustomFolder,
+            CustomOutputDirectory = tempRoot
+        };
+        var planVaapi = FfmpegCommandBuilder.BuildJobPlan(pVaapi, item);
+        var vaapiCmd = string.Join(' ', planVaapi.Pass2Arguments);
+        Assert(vaapiCmd.Contains("-vaapi_device /dev/dri/renderD128", StringComparison.Ordinal),
+            $"VAAPI should include -vaapi_device: {vaapiCmd}");
+        Assert(vaapiCmd.Contains("format=nv12,hwupload", StringComparison.Ordinal),
+            $"VAAPI filter should end with format=nv12,hwupload: {vaapiCmd}");
+        Assert(vaapiCmd.Contains("-qp 25", StringComparison.Ordinal) && !vaapiCmd.Contains("-pix_fmt", StringComparison.Ordinal),
+            $"VAAPI should use -qp and omit -pix_fmt: {vaapiCmd}");
+
+        // 3. Linux VAAPI with image watermark -> filter_complex ends with format=nv12,hwupload
+        var pVaapiWm = new EncodingProfile
+        {
+            ContainerFormat = "mp4",
+            VideoCodec = "hevc_vaapi",
+            RateControlMode = RateControlMode.CrfOrCq,
+            QualityValue = 24,
+            ImageWatermarkEnabled = true,
+            ImageWatermarkPath = wmFile
+        };
+        var vaapiGraph = FfmpegFilterBuilder.BuildVideoFilterGraph(pVaapiWm, null, false, 0, 0, 0, 0, SubtitleMode.KeepSoft, null);
+        Assert(vaapiGraph.UseFilterComplex && vaapiGraph.FilterComplex is not null &&
+               vaapiGraph.FilterComplex.Contains("overlay=") && vaapiGraph.FilterComplex.Contains("format=nv12,hwupload"),
+            $"VAAPI image watermark filter_complex mismatch: {vaapiGraph.FilterComplex}");
+
+        // 4. HardwareCapabilities badge & default preset recommendation across OS encoders
+        var fakeExe = Environment.ProcessPath ?? input;
+        var macCaps = new HardwareCapabilities
+        {
+            FfmpegPath = fakeExe,
+            FfprobePath = fakeExe,
+            GpuNames = ["Apple M3 Pro"],
+            WorkingEncoders = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "h264_videotoolbox", "hevc_videotoolbox" }
+        };
+        Assert(macCaps.BuildBadgeText().Contains("VideoToolbox") && PresetRepository.RecommendDefaultPresetId(macCaps) == "builtin-vt-hevc",
+            $"macOS badge/preset mismatch: {macCaps.BuildBadgeText()}");
+
+        var nvCaps = new HardwareCapabilities
+        {
+            FfmpegPath = fakeExe,
+            FfprobePath = fakeExe,
+            GpuNames = ["NVIDIA GeForce RTX 4070"],
+            WorkingEncoders = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "h264_nvenc", "hevc_nvenc" }
+        };
+        Assert(nvCaps.BuildBadgeText().Contains("NVENC") && PresetRepository.RecommendDefaultPresetId(nvCaps) == "builtin-nvenc-hevc",
+            $"NVENC badge/preset mismatch: {nvCaps.BuildBadgeText()}");
+
+        var vaapiCaps = new HardwareCapabilities
+        {
+            FfmpegPath = fakeExe,
+            FfprobePath = fakeExe,
+            GpuNames = ["AMD Radeon Graphics"],
+            WorkingEncoders = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "h264_vaapi", "hevc_vaapi" }
+        };
+        Assert(vaapiCaps.BuildBadgeText().Contains("VAAPI") && PresetRepository.RecommendDefaultPresetId(vaapiCaps) == "builtin-vaapi-hevc",
+            $"VAAPI badge/preset mismatch: {vaapiCaps.BuildBadgeText()}");
+
+        var cpuCaps = new HardwareCapabilities
+        {
+            FfmpegPath = fakeExe,
+            FfprobePath = fakeExe
+        };
+        Assert(PresetRepository.RecommendDefaultPresetId(cpuCaps) == "builtin-cpu-x264",
+            "CPU fallback default preset should be builtin-cpu-x264");
     }
 
     private static void Fail(string name, string message)

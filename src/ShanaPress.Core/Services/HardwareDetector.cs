@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Runtime.Versioning;
 using System.Text;
 using Microsoft.Win32;
 using ShanaPress.Core.Models;
@@ -8,10 +7,22 @@ namespace ShanaPress.Core.Services;
 
 public static class HardwareDetector
 {
-    private static readonly string[] HardwareEncodersToProbe =
+    private static readonly string[] WindowsHardwareEncoders =
     [
         "h264_nvenc", "hevc_nvenc", "av1_nvenc",
         "h264_amf", "hevc_amf", "av1_amf",
+        "h264_qsv", "hevc_qsv", "av1_qsv"
+    ];
+
+    private static readonly string[] MacHardwareEncoders =
+    [
+        "h264_videotoolbox", "hevc_videotoolbox"
+    ];
+
+    private static readonly string[] LinuxHardwareEncoders =
+    [
+        "h264_nvenc", "hevc_nvenc", "av1_nvenc",
+        "h264_vaapi", "hevc_vaapi", "av1_vaapi",
         "h264_qsv", "hevc_qsv", "av1_qsv"
     ];
 
@@ -21,7 +32,7 @@ public static class HardwareDetector
         CancellationToken ct = default)
     {
         var caps = new HardwareCapabilities();
-        caps.GpuNames = ReadGpuNames();
+        caps.GpuNames = await ReadGpuNamesAsync(ct);
 
         var ffmpegPath = FfmpegLocator.ResolveFfmpeg(customFfmpegPath);
         var ffprobePath = FfmpegLocator.ResolveFfprobe(customFfprobePath, ffmpegPath);
@@ -37,7 +48,13 @@ public static class HardwareDetector
         caps.FfmpegVersion = await ReadFfmpegVersionAsync(caps.FfmpegPath, ct);
         caps.AvailableEncoders = await ReadAvailableEncodersAsync(caps.FfmpegPath, ct);
 
-        var probeTasks = HardwareEncodersToProbe
+        var candidates = OperatingSystem.IsWindows()
+            ? WindowsHardwareEncoders
+            : OperatingSystem.IsMacOS()
+                ? MacHardwareEncoders
+                : LinuxHardwareEncoders;
+
+        var probeTasks = candidates
             .Where(e => caps.AvailableEncoders.Contains(e))
             .Select(async encoder =>
             {
@@ -57,13 +74,27 @@ public static class HardwareDetector
         return caps;
     }
 
-    private static List<string> ReadGpuNames()
+    private static async Task<List<string>> ReadGpuNamesAsync(CancellationToken ct)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return ReadWindowsGpuNames();
+        }
+        if (OperatingSystem.IsMacOS())
+        {
+            return await ReadMacGpuNamesAsync(ct);
+        }
+        if (OperatingSystem.IsLinux())
+        {
+            return await ReadLinuxGpuNamesAsync(ct);
+        }
+        return new List<string>();
+    }
+
+    private static List<string> ReadWindowsGpuNames()
     {
         var list = new List<string>();
-        if (!OperatingSystem.IsWindows())
-        {
-            return list;
-        }
+        if (!OperatingSystem.IsWindows()) return list;
 
         try
         {
@@ -96,13 +127,79 @@ public static class HardwareDetector
         return list;
     }
 
+    private static async Task<List<string>> ReadMacGpuNamesAsync(CancellationToken ct)
+    {
+        var list = new List<string>();
+        try
+        {
+            var cpuBrand = (await RunSimpleProcessAsync("sysctl", "-n machdep.cpu.brand_string", 2500, ct)).Trim();
+            if (!string.IsNullOrWhiteSpace(cpuBrand) && cpuBrand.Contains("Apple", StringComparison.OrdinalIgnoreCase))
+            {
+                list.Add(cpuBrand);
+                return list;
+            }
+
+            var output = await RunSimpleProcessAsync("system_profiler", "SPDisplaysDataType", 4000, ct);
+            foreach (var rawLine in output.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var line = rawLine.Trim();
+                if (line.StartsWith("Chipset Model:", StringComparison.OrdinalIgnoreCase))
+                {
+                    var name = line["Chipset Model:".Length..].Trim();
+                    if (!string.IsNullOrWhiteSpace(name) && !list.Contains(name, StringComparer.OrdinalIgnoreCase))
+                    {
+                        list.Add(name);
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Ignore macOS probe failures
+        }
+        return list;
+    }
+
+    private static async Task<List<string>> ReadLinuxGpuNamesAsync(CancellationToken ct)
+    {
+        var list = new List<string>();
+        try
+        {
+            var output = await RunSimpleProcessAsync("lspci", string.Empty, 2500, ct);
+            foreach (var rawLine in output.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (!rawLine.Contains("VGA", StringComparison.OrdinalIgnoreCase) &&
+                    !rawLine.Contains("3D controller", StringComparison.OrdinalIgnoreCase) &&
+                    !rawLine.Contains("Display controller", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var colon = rawLine.IndexOf(": ", StringComparison.Ordinal);
+                if (colon > 0)
+                {
+                    var secondColon = rawLine.IndexOf(": ", colon + 2, StringComparison.Ordinal);
+                    var gpuName = (secondColon > 0 ? rawLine[(secondColon + 2)..] : rawLine[(colon + 2)..]).Trim();
+                    if (!string.IsNullOrWhiteSpace(gpuName) && !list.Contains(gpuName, StringComparer.OrdinalIgnoreCase))
+                    {
+                        list.Add(gpuName);
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // lspci might not be installed on minimal Linux distros
+        }
+        return list;
+    }
+
     private static async Task<string> ReadFfmpegVersionAsync(string ffmpegPath, CancellationToken ct)
     {
         try
         {
             var output = await RunSimpleProcessAsync(ffmpegPath, "-version", 4000, ct);
-            var firstLine = output.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim() ?? string.Empty;
-            return firstLine;
+            return output.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim() ?? string.Empty;
         }
         catch
         {
@@ -119,7 +216,6 @@ public static class HardwareDetector
             foreach (var rawLine in output.Split('\n', StringSplitOptions.RemoveEmptyEntries))
             {
                 var line = rawLine.Trim();
-                // Format: " V....D h264_nvenc ..."
                 if (line.Length < 8 || line[0] is not ('V' or 'A' or 'S')) continue;
                 var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length >= 2)
@@ -139,7 +235,17 @@ public static class HardwareDetector
     {
         try
         {
-            var args = $"-hide_banner -loglevel error -f lavfi -i testsrc2=duration=0.1:size=320x240:rate=30 -c:v {encoder} -f null -";
+            string args;
+            if (encoder.EndsWith("_vaapi", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!File.Exists("/dev/dri/renderD128")) return false;
+                args = $"-hide_banner -loglevel error -vaapi_device /dev/dri/renderD128 -f lavfi -i testsrc2=duration=0.1:size=320x240:rate=30 -vf format=nv12,hwupload -c:v {encoder} -f null -";
+            }
+            else
+            {
+                args = $"-hide_banner -loglevel error -f lavfi -i testsrc2=duration=0.1:size=320x240:rate=30 -c:v {encoder} -f null -";
+            }
+
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             timeoutCts.CancelAfter(5000);
 

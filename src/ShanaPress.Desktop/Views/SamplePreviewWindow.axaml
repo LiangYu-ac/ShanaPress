@@ -1,0 +1,41 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ShanaPress.Desktop.Views.SamplePreviewWindow"
+        Icon="avares://ShanaPress/Assets/app.ico"
+        Title="10 秒快速试压与体积预估"
+        Width="560" Height="380"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <Grid Margin="20" RowDefinitions="Auto,*,Auto">
+        <StackPanel Margin="0,0,0,12">
+            <TextBlock x:Name="FileNameText" FontSize="16" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+            <TextBlock x:Name="ProfileSummaryText" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <Border Grid.Row="1" Classes="card" Padding="16">
+            <Grid ColumnDefinitions="155,*" RowDefinitions="32,32,32,38,32">
+                <TextBlock Grid.Row="0" Text="原始文件大小:" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center"/>
+                <TextBlock x:Name="SourceSizeText" Grid.Row="0" Grid.Column="1" FontWeight="SemiBold" VerticalAlignment="Center"/>
+
+                <TextBlock Grid.Row="1" Text="试压采样片段:" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center"/>
+                <TextBlock x:Name="SampleSizeText" Grid.Row="1" Grid.Column="1" VerticalAlignment="Center"/>
+
+                <TextBlock Grid.Row="2" Text="试压耗时:" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center"/>
+                <TextBlock x:Name="ElapsedText" Grid.Row="2" Grid.Column="1" VerticalAlignment="Center"/>
+
+                <TextBlock Grid.Row="3" Text="预估完整输出大小:" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                <TextBlock x:Name="EstimatedFullText" Grid.Row="3" Grid.Column="1" FontSize="17" FontWeight="Bold" Foreground="{DynamicResource SuccessBrush}" VerticalAlignment="Center"/>
+
+                <TextBlock Grid.Row="4" Text="预估压缩率:" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center"/>
+                <TextBlock x:Name="EstimatedRatioText" Grid.Row="4" Grid.Column="1" FontWeight="Bold" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0" Spacing="8">
+            <Button Content="播放试压片段" Click="PlaySample_Click" Classes="success-btn"/>
+            <Button Content="打开试压目录" Click="OpenSampleFolder_Click" Classes="toolbar-btn"/>
+            <Button Content="调整快速设置" Click="AdjustSettings_Click" Classes="toolbar-btn"/>
+            <Button Content="关闭" IsCancel="True" IsDefault="True" Click="Close_Click" Classes="primary-btn" Width="80"/>
+        </StackPanel>
+    </Grid>
+</Window>

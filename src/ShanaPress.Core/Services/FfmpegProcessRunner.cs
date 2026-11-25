@@ -26,7 +26,7 @@ public sealed class FfmpegProcessRunner
     {
         if (string.IsNullOrWhiteSpace(ffmpegPath) || !File.Exists(ffmpegPath))
         {
-            throw new FileNotFoundException("找不到 ffmpeg.exe", ffmpegPath);
+            throw new FileNotFoundException("找不到 ffmpeg 可执行文件", ffmpegPath);
         }
 
         var outDir = Path.GetDirectoryName(plan.OutputPath);
@@ -85,9 +85,16 @@ public sealed class FfmpegProcessRunner
     {
         lock (_procLock)
         {
-            if (_currentProcess is { HasExited: false } proc && !_isPaused && OperatingSystem.IsWindows())
+            if (_currentProcess is { HasExited: false } proc && !_isPaused)
             {
-                NtSuspendProcess(proc.Handle);
+                if (OperatingSystem.IsWindows())
+                {
+                    NtSuspendProcess(proc.Handle);
+                }
+                else
+                {
+                    SendUnixSignal(proc.Id, "-STOP");
+                }
                 _isPaused = true;
                 _currentParser?.PauseTimer();
             }
@@ -98,9 +105,16 @@ public sealed class FfmpegProcessRunner
     {
         lock (_procLock)
         {
-            if (_currentProcess is { HasExited: false } proc && _isPaused && OperatingSystem.IsWindows())
+            if (_currentProcess is { HasExited: false } proc && _isPaused)
             {
-                NtResumeProcess(proc.Handle);
+                if (OperatingSystem.IsWindows())
+                {
+                    NtResumeProcess(proc.Handle);
+                }
+                else
+                {
+                    SendUnixSignal(proc.Id, "-CONT");
+                }
                 _isPaused = false;
                 _currentParser?.ResumeTimer();
             }
@@ -118,6 +132,10 @@ public sealed class FfmpegProcessRunner
                     if (OperatingSystem.IsWindows())
                     {
                         NtResumeProcess(kvp.Value.Handle);
+                    }
+                    else
+                    {
+                        SendUnixSignal(kvp.Value.Id, "-CONT");
                     }
                     kvp.Value.Kill(entireProcessTree: true);
                 }
@@ -232,9 +250,16 @@ public sealed class FfmpegProcessRunner
         {
             if (proc.HasExited) return;
 
-            if (_isPaused && OperatingSystem.IsWindows())
+            if (_isPaused)
             {
-                NtResumeProcess(proc.Handle);
+                if (OperatingSystem.IsWindows())
+                {
+                    NtResumeProcess(proc.Handle);
+                }
+                else
+                {
+                    SendUnixSignal(proc.Id, "-CONT");
+                }
                 _isPaused = false;
             }
 
@@ -256,6 +281,25 @@ public sealed class FfmpegProcessRunner
         catch
         {
             // Ignore termination race
+        }
+    }
+
+    private static void SendUnixSignal(int pid, string signalFlag)
+    {
+        try
+        {
+            using var killProc = Process.Start(new ProcessStartInfo
+            {
+                FileName = "/bin/kill",
+                Arguments = $"{signalFlag} {pid}",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+            killProc?.WaitForExit(1000);
+        }
+        catch
+        {
+            // Ignore if process already exited
         }
     }
 

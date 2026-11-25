@@ -1,13 +1,13 @@
 <div align="center">
   <img src="docs/logo.png" alt="ShanaPress Logo" width="112" height="112" />
   <h1>ShanaPress</h1>
-  <p><strong>轻量级、现代化的 Windows GPU 批量视频压缩桌面工具</strong></p>
+  <p><strong>轻量、高颜值的跨平台 GPU 加速批量视频压缩工具（Windows / macOS / Linux）</strong></p>
 
   <p>
     <img src="https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square&logo=dotnet" alt=".NET 8" />
-    <img src="https://img.shields.io/badge/UI-WPF%20Dark%20%26%20Light-0078D4?style=flat-square&logo=windows" alt="WPF" />
+    <img src="https://img.shields.io/badge/UI-WPF%20%7C%20Avalonia%2011-0078D4?style=flat-square" alt="WPF & Avalonia" />
     <img src="https://img.shields.io/badge/Engine-FFmpeg-007808?style=flat-square&logo=ffmpeg" alt="FFmpeg" />
-    <img src="https://img.shields.io/badge/Platform-Windows%20x64-00A4EF?style=flat-square" alt="Windows x64" />
+    <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-00A4EF?style=flat-square" alt="Windows | macOS | Linux" />
     <img src="https://img.shields.io/badge/License-MIT-10B981?style=flat-square" alt="MIT License" />
   </p>
 
@@ -20,108 +20,105 @@
 
 ## 下载与安装
 
-前往 [GitHub Releases 最新版本页面](https://github.com/LiangYu-ac/ShanaPress/releases/latest) 下载：
+前往 [GitHub Releases 页面](https://github.com/LiangYu-ac/ShanaPress/releases/latest) 下载对应系统版本：
 
-- **标准安装版 (`ShanaPress-Setup-v*-win-x64.exe`，推荐)**：内置 .NET 8 运行时与 FFmpeg 核心组件，支持安装向导、桌面快捷方式与常规卸载，**下载安装即可直接使用**。
-- **绿色便携版 (`ShanaPress-v*-win-x64-portable.exe`)**：内置 .NET 8 运行时的单文件程序，无需安装即可运行（需在 `PATH` 或同级目录放置 `ffmpeg.exe` / `ffprobe.exe`）。
+### Windows
+- **Windows 安装版（`ShanaPress-Setup-v*-win-x64.exe`，推荐）**：原生 WPF 版本，内置完整 .NET 8 运行环境及 `ffmpeg.exe` / `ffprobe.exe`，提供标准安装向导、开始菜单与桌面快捷方式，支持控制面板卸载——**下载安装即可开箱即用**。
+- **Windows 单文件绿色版（`ShanaPress-v*-win-x64-portable.exe`）**：独立可执行的 .NET 8 单文件程序（需系统 `PATH` 或程序同目录下存在 `ffmpeg.exe` 与 `ffprobe.exe`）。
 
----
+### macOS
+- **Apple Silicon 芯片（`ShanaPress-v*-macos-arm64.dmg`）** / **Intel 芯片（`ShanaPress-v*-macos-x64.dmg`）**：基于 Avalonia 的原生 `.app` 镜像包。双击打开 `.dmg` 后将 **ShanaPress** 拖入 `应用程序 (Applications)` 即可。
+  - **安装 FFmpeg 依赖**：首次运行前通过 Homebrew 安装 FFmpeg：
+    ```bash
+    brew install ffmpeg
+    ```
+  - **首次打开提示说明**：安装包使用 Ad-hoc 自签名。若 macOS 提示“无法验证开发者”或“文件已损坏”，请在终端执行一次以下命令移除隔离属性：
+    ```bash
+    sudo xattr -cr /Applications/ShanaPress.app
+    ```
 
-## 界面预览
-
-<table>
-  <tr>
-    <td align="center"><strong>深色模式（Dark Mode）</strong></td>
-    <td align="center"><strong>浅色模式（Light Mode）</strong></td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshot-dark.png" alt="ShanaPress Dark Mode" /></td>
-    <td><img src="docs/screenshot-light.png" alt="ShanaPress Light Mode" /></td>
-  </tr>
-</table>
+### Linux
+- **Debian / Ubuntu 安装包（`ShanaPress-v*-linux-x64.deb`，推荐）**：自动声明并安装 `ffmpeg` 依赖，并注册应用菜单图标：
+  ```bash
+  sudo apt install ./ShanaPress-v*-linux-x64.deb
+  ```
+- **通用压缩包（`ShanaPress-v*-linux-x64.tar.gz` / `ShanaPress-v*-linux-arm64.tar.gz`）**：解压即用（需提前安装 FFmpeg，如 `sudo apt install ffmpeg`），可运行解压目录内的 `./install-desktop.sh` 注册桌面快捷方式。
 
 ---
 
 ## 核心特性
 
-### 1. 硬件加速与全能编码器支持
-- **NVIDIA NVENC**：自动探测 `h264_nvenc`、`hevc_nvenc`、`av1_nvenc`，支持 CQ 恒定质量、VBR 码率、`-multipass fullres` 与 Spatial / Temporal AQ。
-- **AMD AMF & Intel QSV**：支持 `h264_amf`、`hevc_amf`、`av1_amf` 及 Quick Sync 硬件加速。
-- **CPU 高画质软件编码**：`libx264`、`libx265`、`libaom-av1`、`libvpx-vp9`，支持 CRF 与完整 **2-Pass 二压**。
-- **无损流复制与实用输出**：支持视频/音频流直接复制（`Copy`）、GIF 高清调色板导出、纯音频提取（MP3 / FLAC）。
+### 1. 全硬件加速与丰富编码器支持
+- **NVIDIA NVENC**（Windows & Linux）：启动自动真实探测可用的 `h264_nvenc`、`hevc_nvenc`、`av1_nvenc`，支持恒定质量 (`CQ`)、VBR 码率、单次高精度 `-multipass fullres` 及 Spatial / Temporal AQ。
+- **Apple VideoToolbox**（macOS）：原生硬件加速支持 `h264_videotoolbox` 与 `hevc_videotoolbox`（自动附加 QuickTime 兼容的 `-tag:v hvc1` 及软件回退 `-allow_sw 1`）。
+- **Linux VAAPI**（Linux 平台 Intel / AMD 核显独显）：自动探测 `/dev/dri/renderD128` 设备，支持 `h264_vaapi`、`hevc_vaapi`、`av1_vaapi`，自动在简单滤镜及 `-filter_complex` 水印链末尾注入 `format=nv12,hwupload`。
+- **AMD AMF & Intel QSV**：自动探测并支持 `h264_amf`、`hevc_amf`、`av1_amf` 与 Intel Quick Sync Video (`*_qsv`) 编码器。
+- **软件编码与无损容器**：支持 `libx264`、`libx265`、`libsvtav1`、`libvpx-vp9`、流复制 (`copy`)、双通道调色板高清 **GIF** 导出、纯音频提取（MP3 / AAC），支持 `MP4` / `MKV` / `MOV` / `WebM` / `MP3` / `GIF` 等容器。
 
-### 2. 高效批量处理与精准控体积
-- **拖拽批量队列**：支持一次拖入多个视频文件或整个文件夹（自动递归扫描），并发 `ffprobe` 解析分辨率、帧率、编码、HDR 状态与音轨/字幕信息。
-- **快速设置面板 (`F6`)**：涵盖「封装与常规」「视频编码」「音频编码」「画面与滤镜」「字幕与水印」「预设与高级」六大选项卡，底部实时生成等效 FFmpeg 命令行。
-- **四种码率控制模式**：
-  - `CRF / CQ` 恒定质量滑块（实时画质分级提示）
-  - `ABR` 平均码率
-  - `2-Pass` 二压码率
-  - **按目标体积 (MB)**：根据有效时长与音频码率自动反算视频码率，精准控制输出大小
-- **10 秒快速试压预估**：截取片段试压并按比例预估完整输出体积与压缩率，支持试看确认后再启动整批编码。
+### 2. 精准码率控制与压前大小预测
+- **四种码控模式**：支持 `CRF / CQ / QP` 恒定质量、`指定目标体积`（按时长精确反算码率并可选 2-Pass 二次编码）、`1-Pass ABR` 与 `2-Pass VBR`。
+- **样本预览大小预估**：正式压缩前可一键试压 `5秒 / 10秒 / 20秒` 片段，直观检查画质并高准确度推算完整文件压缩后体积。
 
-### 3. 可视化区间裁剪、黑边裁切与滤镜增强
-- **Trim & Crop 预览窗口**：时间轴滑块实时抽帧预览、可视化半透明裁切遮罩、`cropdetect` 一键自动检测黑边，并支持针对单个文件独立覆盖裁剪区间与外挂字幕。
-- **完整画面与音频滤镜**：
-  - 旋转（90° / 180° / 270°）、水平/垂直镜像、BWDIF / YADIF 去隔行
-  - **HDR → SDR 色调映射**（`zscale` + `tonemap` `hable` / `mobius` / `reinhard`，避免 HDR 转 SDR 色彩发灰）
-  - 降噪（`hqdn3d`）、锐化（`unsharp`）
-  - SRT / ASS 外挂硬字幕烧录与软字幕封装
-  - 透明通道 PNG 图片水印与中文文字水印（`drawtext`）
-  - 音频音量增益与 EBU R128 响度标准化（`loudnorm`）
+### 3. 可视化裁剪、画面滤镜与字幕水印
+- **可视化剪辑与裁剪弹窗**：实时拖动进度条并抽帧预览，支持可视化设置起止剪辑时间点、四边像素裁剪滑块，以及一键黑边**自动探测 (`cropdetect`)**。
+- **画面滤镜管道**：支持 `yadif` / `bwdif` 去隔行、`90° / 180° / 270°` 旋转、水平/垂直翻转、常用分辨率缩放、帧率调整、HDR 转 SDR 色调映射以及轻/中/强三档降噪与锐化。
+- **字幕与水印**：支持保留软字幕、外挂 `.srt` / `.ass` / `.vtt` 硬字幕烧录（自动定位 Windows / macOS / Linux 中文字体）、清除字幕；支持文字水印与透明 PNG 图片水印混合叠加。
 
-### 4. 可靠调度与原生深浅双主题
-- 支持 **1 ~ 4 路并发编码**、进程级真暂停/继续（挂起/恢复编码进程并冻结 ETA 计时）、优雅取消（自动清理残缺文件与 2-Pass 临时日志）。
-- **原生级深色 / 浅色模式**：支持 Windows 标题栏 DWM 沉浸着色与全控件定制模板，一键无刷新切换。
-- 支持自定义预设保存、覆盖、删除及 JSON 导入/导出；支持编码完成后自动打开目录、提示音或 30 秒倒计时关机。
+### 4. 高效批量队列与深浅双主题界面
+- **跨平台现代桌面界面**：Windows 采用原生 WPF，macOS 与 Linux 采用布局与配色一致的 Avalonia 11 桌面 UI——统一语义化**深色 (Dark)** / **浅色 (Light)** 主题、自定义矢量图标、完整支持文件与文件夹拖拽导入。
+- **实用批处理控制**：原生进程**暂停 / 恢复**（Windows 使用 `NtSuspendProcess` / `NtResumeProcess`，macOS & Linux 使用 `SIGSTOP` / `SIGCONT`）、同路径防覆盖安全保护、自定义输出文件名模板、任务完成桌面通知及跨平台完成后自动关机选项。
 
 ---
 
-## 内置预设
+## 内置预设一览
 
-| 预设名称 | 容器 | 视频编码器 | 适用场景 |
-| --- | --- | --- | --- |
-| RTX NVENC HEVC 极速高质量 | MP4 | `hevc_nvenc` (CQ 26) | NVIDIA 显卡极速压缩首选，体积与画质兼顾 |
-| RTX NVENC H.264 极速通用 | MP4 | `h264_nvenc` (CQ 24) | 最高兼容性 + 硬件极速转码 |
-| RTX NVENC AV1 极限压缩 | MP4 | `av1_nvenc` (CQ 30) | RTX 40 系显卡高压缩率首选 |
-| CPU x264 通用兼容高画质 | MP4 | `libx264` (CRF 23) | 手机、网页与各类播放器通用兼容 |
-| CPU x265 高压缩比存档 | MKV | `libx265` (CRF 26) | 高清视频高压缩比收藏存档 |
-| 微信 / 社交分享小体积 | MP4 | `libx264` (720p 30fps) | 社交软件快速发送瘦身 |
-| 按目标体积压缩 25MB | MP4 | `libx264` (2-Pass) | 严格控制输出体积上限 |
-| 无损快速改封装 | MP4 | `copy` (Stream Copy) | 秒级换容器或无损裁剪 |
-| 仅提取音频 | MP3 | `libmp3lame` (192k) | 从视频中剥离并导出音频 |
-| 高清动态表情图 | GIF | `palettegen` / `paletteuse` | 15fps 调色板优化高清动图 |
-
----
-
-## 快捷键
-
-- `F6`：打开「快速设置」弹窗
-- `Ctrl + O`：添加视频文件
-- `Delete`（队列聚焦时）：移除选中任务
-- 双击队列项：打开「裁剪与预览」窗口
+| 预设名称 | 适用场景 | 核心参数 |
+| --- | --- | --- |
+| **Apple VideoToolbox HEVC 高效压制 (MP4)** *(macOS 默认)* | Apple Silicon / Intel Mac 高速省空间压制 | `hevc_videotoolbox` · 质量 `25` (`-q:v 59`) · `hvc1` · AAC 128k |
+| **Apple VideoToolbox H.264 极速通用 (MP4)** | macOS 下高兼容性导出与快速分享 | `h264_videotoolbox` · 质量 `23` (`-q:v 62`) · AAC 128k |
+| **RTX HEVC 高效压缩 (NVENC)** | 日常高压缩比存档、体积小画质高 | `hevc_nvenc` · CQ `28` · Preset `p5` · AAC 128k |
+| **Linux VAAPI HEVC 硬件压制** | Linux 下 Intel / AMD GPU 硬件压制 | `hevc_vaapi` · QP `26` · `/dev/dri/renderD128` · AAC 128k |
+| **RTX H.264 高兼容分享 (NVENC)** | 微信 / 手机端 / 网页端全设备秒播 | `h264_nvenc` · CQ `24` · Preset `p5` · AAC 128k |
+| **RTX AV1 极致压缩 (NVENC)** | RTX 40/50 系显卡最小体积压制 | `av1_nvenc` · CQ `32` · Preset `p5` · Opus/AAC |
+| **社交上传 25MB 限制** | Discord / 微信 / 邮件严格限流上传 | 目标体积 `23 MB` · 2-Pass · 720p |
+| **录屏课件超轻压缩 (x264)** | 高清录屏、教程演示低码率高清晰 | `libx264` · CRF `24` · Preset `medium` |
+| **网页优化 (WebM VP9)** | 网页内嵌开源免版税高清播放 | `libvpx-vp9` · CRF `32` · Opus 128k |
+| **高压缩归档 (x265)** | 不依赖独显的纯净 CPU 极致收藏画质 | `libx265` · CRF `24` · Preset `medium` |
+| **SVT-AV1 极速高压缩 (CPU)** | 新一代开源高效 AV1 软件压制 | `libsvtav1` · CRF `34` · Preset `6` |
+| **仅提取音频 (MP3 192k)** | 快速剥离视频并输出高品质 MP3 | `-vn` · `libmp3lame` · 192k MP3 |
+| **高清动态表情图 (GIF 15fps)** | 双通道调色板优化输出清晰流畅动图 | `palettegen` + `paletteuse` |
 
 ---
 
-## 快速开始与本地构建
+## 从源码构建
 
-### 运行环境
-- Windows 10 / Windows 11 (x64)
-- [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)（源码构建需 .NET 8 SDK）
-- `ffmpeg.exe` 与 `ffprobe.exe`（位于系统 `PATH`、程序同级目录，或在「快速设置 → 预设与高级」中手动指定）
+### 环境要求
+- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- 系统 `PATH`（或运行目录）下已配置 `ffmpeg` 与 `ffprobe`（若仅运行单元测试 `--unit-only` 可不安装）
+- *（仅生成 Windows `.exe` 安装包时需要）*：[Inno Setup 6](https://jrsoftware.org/isinfo.php)
 
-### 一键构建、测试与打包
+### 编译与运行
+```bash
+git clone https://github.com/LiangYu-ac/ShanaPress.git
+cd ShanaPress
 
-```powershell
-powershell -ExecutionPolicy Bypass -File build.ps1
+# 编译整个解决方案（Linux/macOS 自动跳过 Windows WPF 项目并编译 Core + Desktop + Tests）
+dotnet build ShanaPress.sln -c Release
+
+# 运行跨平台 Avalonia 桌面端（Windows / macOS / Linux）
+dotnet run --project src/ShanaPress.Desktop/ShanaPress.Desktop.csproj -c Release
+
+# 运行 Windows 原生 WPF 桌面端（仅 Windows）
+dotnet run --project src/ShanaPress.App/ShanaPress.App.csproj -c Release
 ```
 
-脚本将依次执行 Release 编译、运行全量单元测试与 FFmpeg 集成测试，并输出单文件可执行程序 `dist\ShanaPress.exe`。
-
-仅运行无外部依赖的核心单元测试（适用于 CI 环境）：
-
-```powershell
+### 运行自动化测试
+```bash
+# 运行跨平台单元测试（无需 FFmpeg）
 dotnet run --project tests/ShanaPress.Tests/ShanaPress.Tests.csproj -c Release -- --unit-only
+
+# 运行包含真实 FFmpeg 与硬件编码器在内的完整测试套件
+dotnet run --project tests/ShanaPress.Tests/ShanaPress.Tests.csproj -c Release
 ```
 
 ---
@@ -129,24 +126,23 @@ dotnet run --project tests/ShanaPress.Tests/ShanaPress.Tests.csproj -c Release -
 ## 项目结构
 
 ```text
-ShanaPress/
-├── .github/workflows/
-│   ├── build.yml                 # CI 自动构建与单元测试工作流
-│   └── release.yml               # Windows 安装包构建与 Releases 自动发版工作流
-├── docs/                         # README 品牌图标与界面截图
-├── installer/
-│   └── ShanaPress.iss            # Inno Setup Windows 安装向导脚本
 ├── src/
-│   ├── ShanaPress.Core/          # 零第三方依赖核心库（模型、硬件探测、滤镜/命令构建、进度解析、进程控制）
-│   └── ShanaPress.App/           # .NET 8 WPF 桌面应用（深浅双主题、DWM 标题栏、MVVM 视图）
+│   ├── ShanaPress.Core/       # 跨平台 FFmpeg 命令与滤镜构建、硬件探测、进程控制与预设仓库
+│   ├── ShanaPress.App/        # Windows 原生 WPF 界面（MVVM）、深浅色主题与矢量品牌图标
+│   └── ShanaPress.Desktop/    # 跨平台 Avalonia 11 桌面界面（Windows / macOS / Linux）
 ├── tests/
-│   └── ShanaPress.Tests/         # 单元测试与真实 FFmpeg/NVENC 集成测试套件
-├── build.ps1                     # 一键编译、测试与单文件发布脚本
-├── LICENSE                       # MIT 开源协议
-├── README.md                     # 英文说明文档
-├── README.zh-CN.md               # 简体中文说明文档
-└── ShanaPress.sln
+│   └── ShanaPress.Tests/      # 单元测试 + 真实 FFmpeg / NVENC 集成测试套件
+├── installer/
+│   └── ShanaPress.iss         # Windows Inno Setup 安装包配置（内嵌 .NET 8 与 FFmpeg）
+├── packaging/
+│   ├── macos/Info.plist       # macOS .app 应用包描述文件
+│   └── linux/                 # .deb 构建脚本、.desktop 启动器与桌面注册脚本
+└── .github/workflows/
+    ├── build.yml              # Windows / macOS / Linux 三平台 CI 构建与单元测试
+    └── release.yml            # 多平台自动化发布流水线（输出安装包、.dmg、.deb 与 .tar.gz）
 ```
+
+---
 
 ## 开源协议
 

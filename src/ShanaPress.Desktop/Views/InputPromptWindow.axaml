@@ -1,0 +1,16 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ShanaPress.Desktop.Views.InputPromptWindow"
+        Icon="avares://ShanaPress/Assets/app.ico"
+        Width="420" Height="185"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <Grid Margin="18" RowDefinitions="Auto,Auto,*,Auto">
+        <TextBlock x:Name="MessageTextBlock" Margin="0,0,0,10" FontWeight="SemiBold"/>
+        <TextBox x:Name="InputTextBox" Grid.Row="1" Margin="0,0,0,16"/>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+            <Button Content="取消" IsCancel="True" Click="Cancel_Click" Classes="toolbar-btn" Width="88"/>
+            <Button Content="确定" IsDefault="True" Click="OkButton_Click" Classes="primary-btn" Width="88"/>
+        </StackPanel>
+    </Grid>
+</Window>

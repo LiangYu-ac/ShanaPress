@@ -7,17 +7,16 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag (e.g. v1.0.0)'
+        description: 'Release tag (e.g. v1.1.0)'
         required: true
-        default: 'v1.0.0'
+        default: 'v1.1.0'
 
 permissions:
   contents: write
 
 jobs:
-  release:
+  build-windows:
     runs-on: windows-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -31,16 +30,13 @@ jobs:
         shell: pwsh
         run: |
           $tag = "${{ github.event.inputs.tag }}"
-          if ([string]::IsNullOrWhiteSpace($tag)) {
-            $tag = "${{ github.ref_name }}"
-          }
+          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "${{ github.ref_name }}" }
           $ver = $tag.TrimStart('v')
-          if ($ver -notmatch '^\d+\.\d+\.\d+$') { $ver = "1.0.0" }
+          if ($ver -notmatch '^\d+\.\d+\.\d+$') { $ver = "1.1.0" }
           "RELEASE_TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "APP_VERSION=$ver" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          Write-Host "Resolved TAG=$tag VERSION=$ver"
 
-      - name: Restore, Build & Run Unit Tests
+      - name: Build & Run Unit Tests
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
@@ -55,16 +51,10 @@ jobs:
           $ErrorActionPreference = "Stop"
           New-Item -ItemType Directory -Force -Path "artifacts/release" | Out-Null
           dotnet publish src/ShanaPress.App/ShanaPress.App.csproj `
-            -c Release `
-            -r win-x64 `
-            --self-contained true `
-            -p:Version=$env:APP_VERSION `
-            -p:PublishSingleFile=true `
-            -p:IncludeNativeLibrariesForSelfExtract=true `
-            -p:EnableCompressionInSingleFile=true `
-            -p:DebugType=none `
-            -p:DebugSymbols=false `
-            -o "artifacts/portable"
+            -c Release -r win-x64 --self-contained true `
+            -p:Version=$env:APP_VERSION -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true `
+            -p:DebugType=none -p:DebugSymbols=false -o "artifacts/portable"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Copy-Item "artifacts/portable/ShanaPress.exe" "artifacts/release/ShanaPress-$($env:RELEASE_TAG)-win-x64-portable.exe" -Force
 
@@ -73,14 +63,9 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           dotnet publish src/ShanaPress.App/ShanaPress.App.csproj `
-            -c Release `
-            -r win-x64 `
-            --self-contained true `
-            -p:Version=$env:APP_VERSION `
-            -p:PublishSingleFile=false `
-            -p:DebugType=none `
-            -p:DebugSymbols=false `
-            -o "artifacts/setup-payload"
+            -c Release -r win-x64 --self-contained true `
+            -p:Version=$env:APP_VERSION -p:PublishSingleFile=false `
+            -p:DebugType=none -p:DebugSymbols=false -o "artifacts/setup-payload"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Download & Bundle FFmpeg Essentials
@@ -96,51 +81,38 @@ jobs:
             "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip",
             "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
           )
-
           $downloaded = $false
           foreach ($u in $urls) {
-            Write-Host "Downloading FFmpeg from $u ..."
             curl.exe -fSL --retry 3 --retry-delay 3 -o $zipPath $u
             if ($LASTEXITCODE -eq 0 -and (Test-Path $zipPath) -and ((Get-Item $zipPath).Length -gt 10MB)) {
               $downloaded = $true
               break
             }
           }
-          if (-not $downloaded) { throw "Failed to download FFmpeg bundle from all mirrors." }
+          if (-not $downloaded) { throw "Failed to download FFmpeg bundle." }
 
           Expand-Archive -Path $zipPath -DestinationPath $extractDir -Force
           $ffmpegExe = Get-ChildItem -Path $extractDir -Recurse -Filter "ffmpeg.exe" | Select-Object -First 1
           $ffprobeExe = Get-ChildItem -Path $extractDir -Recurse -Filter "ffprobe.exe" | Select-Object -First 1
           $ffmpegLicense = Get-ChildItem -Path $extractDir -Recurse -Filter "LICENSE*" | Select-Object -First 1
-
-          if (-not $ffmpegExe -or -not $ffprobeExe) {
-            throw "ffmpeg.exe or ffprobe.exe missing inside downloaded archive."
-          }
+          if (-not $ffmpegExe -or -not $ffprobeExe) { throw "ffmpeg.exe or ffprobe.exe missing" }
 
           Copy-Item $ffmpegExe.FullName (Join-Path $targetDir "ffmpeg.exe") -Force
           Copy-Item $ffprobeExe.FullName (Join-Path $targetDir "ffprobe.exe") -Force
-          if ($ffmpegLicense) {
-            Copy-Item $ffmpegLicense.FullName (Join-Path $targetDir "FFMPEG-LICENSE.txt") -Force
-          }
-
-          Get-ChildItem $targetDir | Select-Object Name, Length | Format-Table -AutoSize
+          if ($ffmpegLicense) { Copy-Item $ffmpegLicense.FullName (Join-Path $targetDir "FFMPEG-LICENSE.txt") -Force }
 
       - name: Build Windows Setup Installer (Inno Setup)
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $isccCandidates = @(
-            "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
-            "C:\Program Files\Inno Setup 6\ISCC.exe"
-          )
+          $isccCandidates = @("C:\Program Files (x86)\Inno Setup 6\ISCC.exe", "C:\Program Files\Inno Setup 6\ISCC.exe")
           $iscc = $isccCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
           if (-not $iscc) {
-            Write-Host "Installing Inno Setup via Chocolatey..."
             choco install innosetup -y --no-progress
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             $iscc = $isccCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
           }
-          if (-not $iscc) { throw "ISCC.exe not found after installation." }
+          if (-not $iscc) { throw "ISCC.exe not found" }
 
           $isccDir = Split-Path -Parent $iscc
           $zhIsl = Join-Path $isccDir "Languages\ChineseSimplified.isl"
@@ -154,70 +126,225 @@ jobs:
             "/DOutputDir=$releaseDir",
             "/DOutputBaseFilename=$baseName"
           )
-          if (Test-Path $zhIsl) {
-            $isccArgs += "/DHasZhCN=1"
-          }
+          if (Test-Path $zhIsl) { $isccArgs += "/DHasZhCN=1" }
           $isccArgs += "installer\ShanaPress.iss"
 
           & $iscc @isccArgs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Generate SHA256 Checksums
-        shell: pwsh
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: artifacts/release/*
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Resolve version & tag
         run: |
-          $ErrorActionPreference = "Stop"
-          $releaseDir = (Resolve-Path "artifacts/release").Path
-          $lines = Get-ChildItem -Path $releaseDir -Filter "*.exe" | Sort-Object Name | ForEach-Object {
-            $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-            "$hash  $($_.Name)"
-          }
-          [System.IO.File]::WriteAllLines((Join-Path $releaseDir "SHA256SUMS.txt"), $lines)
-          Get-ChildItem $releaseDir | Select-Object Name, @{N='MB';E={[Math]::Round($_.Length/1MB,2)}} | Format-Table -AutoSize
+          TAG="${{ github.event.inputs.tag }}"
+          if [ -z "$TAG" ]; then TAG="${{ github.ref_name }}"; fi
+          VER="${TAG#v}"
+          if ! [[ "$VER" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then VER="1.1.0"; fi
+          echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
+          echo "APP_VERSION=$VER" >> "$GITHUB_ENV"
+
+      - name: Run Unit Tests
+        run: |
+          dotnet build src/ShanaPress.Desktop/ShanaPress.Desktop.csproj -c Release -p:Version="$APP_VERSION"
+          dotnet run --project tests/ShanaPress.Tests/ShanaPress.Tests.csproj -c Release -- --unit-only
+
+      - name: Generate AppIcon.icns
+        run: |
+          mkdir -p artifacts/AppIcon.iconset
+          SRC="src/ShanaPress.Desktop/Assets/logo.png"
+          sips -z 16 16     "$SRC" --out artifacts/AppIcon.iconset/icon_16x16.png >/dev/null
+          sips -z 32 32     "$SRC" --out artifacts/AppIcon.iconset/icon_16x16@2x.png >/dev/null
+          sips -z 32 32     "$SRC" --out artifacts/AppIcon.iconset/icon_32x32.png >/dev/null
+          sips -z 64 64     "$SRC" --out artifacts/AppIcon.iconset/icon_32x32@2x.png >/dev/null
+          sips -z 128 128   "$SRC" --out artifacts/AppIcon.iconset/icon_128x128.png >/dev/null
+          sips -z 256 256   "$SRC" --out artifacts/AppIcon.iconset/icon_128x128@2x.png >/dev/null
+          sips -z 256 256   "$SRC" --out artifacts/AppIcon.iconset/icon_256x256.png >/dev/null
+          sips -z 512 512   "$SRC" --out artifacts/AppIcon.iconset/icon_256x256@2x.png >/dev/null
+          sips -z 512 512   "$SRC" --out artifacts/AppIcon.iconset/icon_512x512.png >/dev/null
+          sips -z 1024 1024 "$SRC" --out artifacts/AppIcon.iconset/icon_512x512@2x.png >/dev/null
+          iconutil -c icns artifacts/AppIcon.iconset -o artifacts/AppIcon.icns
+
+      - name: Build macOS .app Bundles & .dmg (arm64 & x64)
+        run: |
+          mkdir -p artifacts/release
+          for ARCH_PAIR in "osx-arm64 arm64" "osx-x64 x64"; do
+            set -- $ARCH_PAIR
+            RID="$1"
+            LABEL="$2"
+
+            PUB_DIR="artifacts/pub-$RID"
+            STAGE_DIR="artifacts/dmg-stage-$RID"
+            APP_DIR="$STAGE_DIR/ShanaPress.app"
+
+            rm -rf "$PUB_DIR" "$STAGE_DIR"
+            dotnet publish src/ShanaPress.Desktop/ShanaPress.Desktop.csproj \
+              -c Release -r "$RID" --self-contained true \
+              -p:Version="$APP_VERSION" -p:DebugType=none -p:DebugSymbols=false \
+              -o "$PUB_DIR"
+
+            mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources"
+            cp -a "$PUB_DIR/." "$APP_DIR/Contents/MacOS/"
+            chmod +x "$APP_DIR/Contents/MacOS/ShanaPress"
+
+            sed -e "s|<string>1.1.0</string>|<string>$APP_VERSION</string>|g" \
+              packaging/macos/Info.plist > "$APP_DIR/Contents/Info.plist"
+            cp artifacts/AppIcon.icns "$APP_DIR/Contents/Resources/AppIcon.icns"
+
+            codesign --force --deep --sign - "$APP_DIR"
+            ln -s /Applications "$STAGE_DIR/Applications"
+
+            DMG_PATH="artifacts/release/ShanaPress-${RELEASE_TAG}-macos-${LABEL}.dmg"
+            for attempt in 1 2 3; do
+              hdiutil create -volname "ShanaPress" -srcfolder "$STAGE_DIR" -ov -format UDZO "$DMG_PATH" && break
+              sleep 3
+            done
+            test -f "$DMG_PATH"
+          done
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-macos
+          path: artifacts/release/*.dmg
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Resolve version & tag
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          if [ -z "$TAG" ]; then TAG="${{ github.ref_name }}"; fi
+          VER="${TAG#v}"
+          if ! [[ "$VER" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then VER="1.1.0"; fi
+          echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
+          echo "APP_VERSION=$VER" >> "$GITHUB_ENV"
+
+      - name: Run Unit Tests
+        run: |
+          dotnet build src/ShanaPress.Desktop/ShanaPress.Desktop.csproj -c Release -p:Version="$APP_VERSION"
+          dotnet run --project tests/ShanaPress.Tests/ShanaPress.Tests.csproj -c Release -- --unit-only
+
+      - name: Build Linux .deb & .tar.gz Packages (x64 & arm64)
+        run: |
+          mkdir -p artifacts/release
+          sed -i 's/\r$//' packaging/linux/build-deb.sh packaging/linux/install-desktop.sh packaging/linux/shanapress.desktop
+          chmod +x packaging/linux/build-deb.sh packaging/linux/install-desktop.sh
+
+          for ARCH_PAIR in "linux-x64 amd64 x64" "linux-arm64 arm64 arm64"; do
+            set -- $ARCH_PAIR
+            RID="$1"
+            DEB_ARCH="$2"
+            TAR_LABEL="$3"
+            PUB_DIR="artifacts/pub-$RID"
+            TAR_STAGE="artifacts/tar-$RID/ShanaPress"
+
+            rm -rf "$PUB_DIR" "artifacts/tar-$RID"
+            dotnet publish src/ShanaPress.Desktop/ShanaPress.Desktop.csproj \
+              -c Release -r "$RID" --self-contained true \
+              -p:Version="$APP_VERSION" -p:DebugType=none -p:DebugSymbols=false \
+              -o "$PUB_DIR"
+            chmod +x "$PUB_DIR/ShanaPress"
+
+            if [ "$RID" = "linux-x64" ]; then
+              ./packaging/linux/build-deb.sh "$PUB_DIR" "$APP_VERSION" "$DEB_ARCH" \
+                "artifacts/release/ShanaPress-${RELEASE_TAG}-linux-${TAR_LABEL}.deb"
+            fi
+
+            mkdir -p "$TAR_STAGE"
+            cp -a "$PUB_DIR/." "$TAR_STAGE/"
+            cp docs/logo.png "$TAR_STAGE/shanapress.png"
+            cp packaging/linux/shanapress.desktop "$TAR_STAGE/shanapress.desktop"
+            cp packaging/linux/install-desktop.sh "$TAR_STAGE/install-desktop.sh"
+            chmod +x "$TAR_STAGE/install-desktop.sh" "$TAR_STAGE/ShanaPress"
+
+            tar -czf "artifacts/release/ShanaPress-${RELEASE_TAG}-linux-${TAR_LABEL}.tar.gz" \
+              -C "artifacts/tar-$RID" "ShanaPress"
+          done
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-linux
+          path: artifacts/release/*
+
+  publish-release:
+    needs: [build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/all
+
+      - name: Resolve tag
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          if [ -z "$TAG" ]; then TAG="${{ github.ref_name }}"; fi
+          echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
+
+      - name: Prepare Release Assets & SHA256SUMS
+        run: |
+          mkdir -p artifacts/final
+          find artifacts/all -type f \( -name '*.exe' -o -name '*.dmg' -o -name '*.deb' -o -name '*.tar.gz' \) -exec cp {} artifacts/final/ \;
+          (cd artifacts/final && sha256sum * | sort -k2 > SHA256SUMS.txt)
+          ls -lh artifacts/final
 
       - name: Publish GitHub Release
-        shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $ErrorActionPreference = "Stop"
-          $setupExe = "artifacts/release/ShanaPress-Setup-$($env:RELEASE_TAG)-win-x64.exe"
-          $portableExe = "artifacts/release/ShanaPress-$($env:RELEASE_TAG)-win-x64-portable.exe"
-          $sums = "artifacts/release/SHA256SUMS.txt"
+          cat > artifacts/RELEASE_NOTES.md <<EOF
+          ## ShanaPress $RELEASE_TAG — Windows · macOS · Linux
 
-          $noteLines = @(
-            "## ShanaPress $($env:RELEASE_TAG) 正式发布"
-            ""
-            "现代化的 Windows GPU 批量视频压缩工具，原生支持 NVIDIA NVENC（H.264 / HEVC / AV1）、AMD AMF、Intel QSV 及 x264 / x265，内置深浅双主题界面与完整可视化裁剪功能。"
-            ""
-            "### 安装包说明"
-            ""
-            "| 文件 | 说明 | 运行前提 |"
-            "| --- | --- | --- |"
-            "| ``ShanaPress-Setup-$($env:RELEASE_TAG)-win-x64.exe`` | **标准安装版（推荐）**：一键向导安装，支持桌面快捷方式与控制面板卸载 | **无需额外安装 .NET 或 FFmpeg**，开箱即用 |"
-            "| ``ShanaPress-$($env:RELEASE_TAG)-win-x64-portable.exe`` | **免安装单文件绿色版**：内置 .NET 8 运行时，双击即用 | 需系统 ``PATH`` 或同级目录已有 ``ffmpeg.exe`` / ``ffprobe.exe`` |"
-            ""
-            "### 主要特性"
-            "- 拖拽批量入队与递归扫描，并发 ``ffprobe`` 解析 HDR / 音轨 / 字幕信息"
-            "- **快速设置 (``F6``)**：支持 CRF/CQ、ABR、2-Pass 二压与按目标体积 (MB) 自动算码率"
-            "- **可视化裁剪预览**：时间轴抽帧、``cropdetect`` 一键自动去黑边、单文件独立字幕覆盖"
-            "- **10 秒快速试压**：提前预估完整压缩后体积并支持直接试看画质"
-            "- **高级滤镜**：BWDIF/YADIF 去隔行、HDR→SDR 色调映射（Hable/Mobius/Reinhard）、降噪锐化、SRT/ASS 硬字幕烧录、PNG 图片水印与中文文字水印"
-            ""
-            "> 提示：标准安装版在 ``ffmpeg/`` 子目录随附 [FFmpeg](https://ffmpeg.org/) GPL 构建二进制文件（对应开源许可详见随附 ``FFMPEG-LICENSE.txt``）。"
-          )
-          $notesFile = "artifacts/release/RELEASE_NOTES.md"
-          [System.IO.File]::WriteAllText($notesFile, ($noteLines -join "`n"), [System.Text.UTF8Encoding]::new($false))
+          Cross-platform GPU-accelerated batch video compressor built with .NET 8 and FFmpeg.
 
-          gh release view "$($env:RELEASE_TAG)" 2>$null | Out-Null
-          if ($LASTEXITCODE -eq 0) {
-            gh release delete "$($env:RELEASE_TAG)" --yes
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          }
+          ### Downloads / 下载包说明
 
-          gh release create "$($env:RELEASE_TAG)" `
-            "$setupExe" `
-            "$portableExe" `
-            "$sums" `
-            --title "ShanaPress $($env:RELEASE_TAG)" `
-            --notes-file "$notesFile"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          | Platform | File | Notes |
+          | --- | --- | --- |
+          | **Windows (x64)** | \`ShanaPress-Setup-$RELEASE_TAG-win-x64.exe\` | **Recommended Installer**: includes .NET 8 runtime & bundled FFmpeg |
+          | **Windows (x64)** | \`ShanaPress-$RELEASE_TAG-win-x64-portable.exe\` | Single-file portable (requires FFmpeg in \`PATH\`) |
+          | **macOS (Apple Silicon)** | \`ShanaPress-$RELEASE_TAG-macos-arm64.dmg\` | M1/M2/M3/M4 native \`.app\` with VideoToolbox support |
+          | **macOS (Intel)** | \`ShanaPress-$RELEASE_TAG-macos-x64.dmg\` | Intel Mac \`.app\` with VideoToolbox support |
+          | **Linux (x64 Debian/Ubuntu)** | \`ShanaPress-$RELEASE_TAG-linux-x64.deb\` | Native \`.deb\` package (\`sudo apt install ./ShanaPress-...\`) |
+          | **Linux (x64 / arm64)** | \`ShanaPress-$RELEASE_TAG-linux-*.tar.gz\` | Portable tarball + \`install-desktop.sh\` |
+
+          ### Platform Notes / 使用提示
+          - **macOS**: Install FFmpeg via Homebrew (\`brew install ffmpeg\`). Since the \`.app\` uses ad-hoc signing, if Gatekeeper warns on first launch, run \`xattr -cr /Applications/ShanaPress.app\` (or right-click → Open).
+          - **Linux**: Install FFmpeg via your package manager (e.g. \`sudo apt install ffmpeg\`). Hardware acceleration supports NVIDIA NVENC and Intel/AMD VAAPI (\`/dev/dri/renderD128\`).
+          - **Windows**: The Setup \`.exe\` bundles FFmpeg GPL binaries in \`ffmpeg/\` for immediate out-of-the-box use.
+          EOF
+          sed -i 's/^          //' artifacts/RELEASE_NOTES.md
+
+          if gh release view "$RELEASE_TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release delete "$RELEASE_TAG" --repo "${{ github.repository }}" --yes
+          fi
+
+          gh release create "$RELEASE_TAG" \
+            artifacts/final/* \
+            --repo "${{ github.repository }}" \
+            --title "ShanaPress $RELEASE_TAG" \
+            --notes-file artifacts/RELEASE_NOTES.md

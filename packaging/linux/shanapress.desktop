@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=ShanaPress
+GenericName=Video Compressor
+Comment=Modern GPU-Accelerated Batch Video Compressor
+Exec=shanapress %F
+Icon=shanapress
+Terminal=false
+Categories=AudioVideo;Video;AudioVideoEditing;
+MimeType=video/mp4;video/x-matroska;video/quicktime;video/x-msvideo;video/webm;video/mp2t;
+StartupWMClass=ShanaPress

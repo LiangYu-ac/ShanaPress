@@ -241,6 +241,12 @@ public static class FfmpegFilterBuilder
                 graph.Append($"[{currentLabel}]split[gif0][gif1];[gif0]palettegen=stats_mode=diff[gifp];[gif1][gifp]paletteuse=dither=bayer:bayer_scale=3[vgif]");
                 currentLabel = "vgif";
             }
+            else if (profile.VideoCodec.Contains("vaapi", StringComparison.OrdinalIgnoreCase))
+            {
+                if (graph.Length > 0) graph.Append(';');
+                graph.Append($"[{currentLabel}]format=nv12,hwupload[vvaapi]");
+                currentLabel = "vvaapi";
+            }
 
             return new FilterGraphBuildResult
             {
@@ -251,7 +257,12 @@ public static class FfmpegFilterBuilder
             };
         }
 
-        // Ensure even dimensions when converting to yuv420p if no resize/crop already handled it
+        if (profile.VideoCodec.Contains("vaapi", StringComparison.OrdinalIgnoreCase))
+        {
+            filters.Add("format=nv12");
+            filters.Add("hwupload");
+        }
+
         return new FilterGraphBuildResult
         {
             UseFilterComplex = false,
@@ -303,15 +314,41 @@ public static class FfmpegFilterBuilder
 
     private static string ResolveSystemFontPath()
     {
-        var fontsDir = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
-        string[] candidates =
+        if (OperatingSystem.IsWindows())
+        {
+            var fontsDir = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
+            string[] winCandidates =
+            [
+                Path.Combine(fontsDir, "msyh.ttc"),
+                Path.Combine(fontsDir, "msyhbd.ttc"),
+                Path.Combine(fontsDir, "simhei.ttf"),
+                Path.Combine(fontsDir, "simsun.ttc"),
+                Path.Combine(fontsDir, "arial.ttf")
+            ];
+            return winCandidates.FirstOrDefault(File.Exists) ?? string.Empty;
+        }
+
+        if (OperatingSystem.IsMacOS())
+        {
+            string[] macCandidates =
+            [
+                "/System/Library/Fonts/PingFang.ttc",
+                "/System/Library/Fonts/STHeiti Medium.ttc",
+                "/System/Library/Fonts/Hiragino Sans GB.ttc",
+                "/System/Library/Fonts/Helvetica.ttc"
+            ];
+            return macCandidates.FirstOrDefault(File.Exists) ?? string.Empty;
+        }
+
+        string[] linuxCandidates =
         [
-            Path.Combine(fontsDir, "msyh.ttc"),
-            Path.Combine(fontsDir, "msyhbd.ttc"),
-            Path.Combine(fontsDir, "simhei.ttf"),
-            Path.Combine(fontsDir, "simsun.ttc"),
-            Path.Combine(fontsDir, "arial.ttf")
+            "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/TTF/DejaVuSans.ttf"
         ];
-        return candidates.FirstOrDefault(File.Exists) ?? string.Empty;
+        return linuxCandidates.FirstOrDefault(File.Exists) ?? string.Empty;
     }
 }

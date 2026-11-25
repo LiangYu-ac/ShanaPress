@@ -1,0 +1,424 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ShanaPress.Desktop.Views.QuickSettingsWindow"
+        Icon="avares://ShanaPress/Assets/app.ico"
+        Title="快速设置 (Quick Settings · F6)"
+        Width="910" Height="700"
+        MinWidth="800" MinHeight="600"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True">
+    <Grid Margin="16" RowDefinitions="*,Auto,Auto">
+
+        <TabControl Grid.Row="0">
+            <!-- Tab 1: Container & General -->
+            <TabItem Header="封装与常规">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="6" Spacing="12">
+                        <Border Classes="card">
+                            <Grid ColumnDefinitions="160,*" RowDefinitions="42,42">
+                                <TextBlock Text="输出封装格式:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <ComboBox Grid.Column="1"
+                                          ItemsSource="{Binding ContainerOptions}"
+                                          SelectedItem="{Binding SelectedContainerOption}"
+                                          Width="290" HorizontalAlignment="Left">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <TextBlock Grid.Row="1" Text="硬件解码加速:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <ComboBox Grid.Row="1" Grid.Column="1"
+                                          ItemsSource="{Binding HardwareDecodeOptions}"
+                                          SelectedItem="{Binding SelectedHardwareDecodeOption}"
+                                          Width="290" HorizontalAlignment="Left">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="封装优化与元数据" FontWeight="SemiBold"/>
+                                <CheckBox Content="MP4/MOV 启用 Web FastStart (-movflags +faststart，网页秒开起播)" IsChecked="{Binding FastStart}"/>
+                                <CheckBox Content="保留原始媒体元数据与创建时间 (Metadata)" IsChecked="{Binding CopyMetadata}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Tab 2: Video Encoding -->
+            <TabItem Header="视频编码">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="6" Spacing="12">
+                        <Border Classes="card">
+                            <Grid ColumnDefinitions="140,*" RowDefinitions="40,Auto">
+                                <TextBlock Text="视频编码器:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <ComboBox Grid.Column="1"
+                                          ItemsSource="{Binding VideoCodecOptions}"
+                                          SelectedItem="{Binding SelectedVideoCodecOption}"
+                                          HorizontalAlignment="Stretch">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <StackPanel Grid.Row="1" Grid.ColumnSpan="2" IsEnabled="{Binding IsVideoEncoderConfigurable}" Margin="0,12,0,0" Spacing="10">
+                                    <TextBlock Text="码率控制模式" FontWeight="SemiBold"/>
+                                    <WrapPanel>
+                                        <RadioButton Content="CRF / CQ 恒定质量 (推荐)" IsChecked="{Binding IsCrfMode}" GroupName="RC" Margin="0,0,18,6"/>
+                                        <RadioButton Content="ABR 平均码率" IsChecked="{Binding IsAbrMode}" GroupName="RC" Margin="0,0,18,6"/>
+                                        <RadioButton Content="2-Pass 二压固定码率" IsChecked="{Binding IsTwoPassMode}" GroupName="RC" Margin="0,0,18,6"/>
+                                        <RadioButton Content="按目标文件大小 (MB)" IsChecked="{Binding IsTargetSizeMode}" GroupName="RC" Margin="0,0,0,6"/>
+                                    </WrapPanel>
+
+                                    <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding IsCrfMode}">
+                                        <Slider Minimum="0" Maximum="{Binding MaxQualitySlider}" Value="{Binding QualityValue}" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding QualityGuidanceText}" Margin="12,0,0,0" FontWeight="SemiBold" Foreground="{DynamicResource AccentSoftTextBrush}" VerticalAlignment="Center"/>
+                                    </Grid>
+
+                                    <StackPanel Orientation="Horizontal" IsVisible="{Binding IsBitrateMode}" Spacing="10">
+                                        <TextBlock Text="目标视频码率 (kbps):" VerticalAlignment="Center"/>
+                                        <TextBox Text="{Binding VideoBitrateKbps}" Width="110"/>
+                                        <TextBlock Text="(常用: 1080p 2500~6000 kbps)" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+
+                                    <StackPanel IsVisible="{Binding IsTargetSizeMode}" Spacing="6">
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <TextBlock Text="目标文件上限 (MB):" VerticalAlignment="Center"/>
+                                            <TextBox Text="{Binding TargetFileSizeMb}" Width="90"/>
+                                            <CheckBox Content="启用 2-Pass 精准控体积 (推荐)" IsChecked="{Binding TargetSizeUseTwoPass}"/>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding EstimatedTargetBitrateHint}" Foreground="{DynamicResource SuccessBrush}" FontWeight="SemiBold"/>
+                                    </StackPanel>
+
+                                    <Grid ColumnDefinitions="*,12,*,12,*">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="编码速度预设 (Preset)" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                            <ComboBox ItemsSource="{Binding EncoderPresetOptions}" SelectedItem="{Binding SelectedEncoderPresetOption}" HorizontalAlignment="Stretch">
+                                                <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="4">
+                                            <TextBlock Text="Profile 规格" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                            <ComboBox ItemsSource="{Binding VideoProfileOptions}" SelectedItem="{Binding SelectedVideoProfileOption}" HorizontalAlignment="Stretch">
+                                                <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="4" Spacing="4">
+                                            <TextBlock Text="像素格式 (色深)" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                            <ComboBox ItemsSource="{Binding PixelFormatOptions}" SelectedItem="{Binding SelectedPixelFormatOption}" HorizontalAlignment="Stretch">
+                                                <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <StackPanel Orientation="Horizontal" IsVisible="{Binding IsNvencCodec}" Spacing="18">
+                                        <CheckBox Content="NVENC Spatial AQ (空间自适应量化，提升暗部/纹理画质)" IsChecked="{Binding NvencSpatialAq}"/>
+                                        <CheckBox Content="Temporal AQ (时间自适应量化)" IsChecked="{Binding NvencTemporalAq}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <Border Classes="card">
+                            <Grid ColumnDefinitions="*,18,260">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="分辨率缩放" FontWeight="SemiBold"/>
+                                    <WrapPanel>
+                                        <RadioButton Content="保持原分辨率" IsChecked="{Binding IsResizeOriginal}" GroupName="Resize" Margin="0,0,16,0"/>
+                                        <RadioButton Content="按预设高度" IsChecked="{Binding IsPresetHeightMode}" GroupName="Resize" Margin="0,0,16,0"/>
+                                        <RadioButton Content="自定义宽高" IsChecked="{Binding IsCustomResizeMode}" GroupName="Resize"/>
+                                    </WrapPanel>
+
+                                    <ComboBox ItemsSource="{Binding PresetHeightOptions}"
+                                              SelectedItem="{Binding SelectedResizeHeightOption}"
+                                              IsVisible="{Binding IsPresetHeightMode}"
+                                              Width="220" HorizontalAlignment="Left">
+                                        <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                                    </ComboBox>
+
+                                    <StackPanel Orientation="Horizontal" IsVisible="{Binding IsCustomResizeMode}" Spacing="8">
+                                        <TextBox Text="{Binding CustomWidth}" Width="80"/>
+                                        <TextBlock Text="×" VerticalAlignment="Center"/>
+                                        <TextBox Text="{Binding CustomHeight}" Width="80"/>
+                                        <CheckBox Content="保持宽高比" IsChecked="{Binding KeepAspectRatio}"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" Spacing="8">
+                                    <TextBlock Text="帧率控制 (FPS)" FontWeight="SemiBold"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="14">
+                                        <RadioButton Content="保持原帧率" IsChecked="{Binding IsOriginalFps}" GroupName="Fps"/>
+                                        <RadioButton Content="固定帧率" IsChecked="{Binding IsCustomFps}" GroupName="Fps"/>
+                                    </StackPanel>
+                                    <ComboBox ItemsSource="{Binding TargetFpsOptions}"
+                                              SelectedItem="{Binding SelectedTargetFpsOption}"
+                                              IsVisible="{Binding IsCustomFps}"
+                                              HorizontalAlignment="Stretch">
+                                        <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Tab 3: Audio -->
+            <TabItem Header="音频编码">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="6" Spacing="12">
+                        <Border Classes="card">
+                            <Grid ColumnDefinitions="150,*" RowDefinitions="42,42,42,42">
+                                <TextBlock Text="音频编码器:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <ComboBox Grid.Column="1" ItemsSource="{Binding AudioCodecOptions}" SelectedItem="{Binding SelectedAudioCodecOption}" Width="260" HorizontalAlignment="Left">
+                                    <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <TextBlock Grid.Row="1" Text="音频码率:" VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding AudioBitrateOptions}" SelectedItem="{Binding SelectedAudioBitrateOption}" Width="260" HorizontalAlignment="Left">
+                                    <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <TextBlock Grid.Row="2" Text="采样率:" VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding SampleRateOptions}" SelectedItem="{Binding SelectedSampleRateOption}" Width="260" HorizontalAlignment="Left">
+                                    <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <TextBlock Grid.Row="3" Text="声道数:" VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding ChannelOptions}" SelectedItem="{Binding SelectedChannelOption}" Width="260" HorizontalAlignment="Left">
+                                    <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="音量增益与响度处理" FontWeight="SemiBold"/>
+                                <Grid ColumnDefinitions="130,*,75">
+                                    <TextBlock Text="音量增益 (dB):" VerticalAlignment="Center"/>
+                                    <Slider Grid.Column="1" Minimum="-20" Maximum="20" Value="{Binding VolumeDb}" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding VolumeDbLabel}" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                </Grid>
+                                <CheckBox Content="启用 EBU R128 响度标准化 (loudnorm，自动平衡过轻或过响声音)" IsChecked="{Binding EnableLoudnorm}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Tab 4: Video Filters -->
+            <TabItem Header="画面与滤镜">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="6" Spacing="12">
+                        <Border Classes="card">
+                            <StackPanel Spacing="10">
+                                <CheckBox Content="全局画面裁切 (Crop，单文件也可在“裁剪与预览”中独立覆盖)" IsChecked="{Binding CropEnabled}" FontWeight="SemiBold"/>
+                                <Grid IsEnabled="{Binding CropEnabled}" ColumnDefinitions="*,10,*,10,*,10,*">
+                                    <StackPanel Spacing="3"><TextBlock Text="左 (px)" FontSize="11.5" Foreground="{DynamicResource SecondaryTextBrush}"/><TextBox Text="{Binding CropLeft}"/></StackPanel>
+                                    <StackPanel Grid.Column="2" Spacing="3"><TextBlock Text="上 (px)" FontSize="11.5" Foreground="{DynamicResource SecondaryTextBrush}"/><TextBox Text="{Binding CropTop}"/></StackPanel>
+                                    <StackPanel Grid.Column="4" Spacing="3"><TextBlock Text="右 (px)" FontSize="11.5" Foreground="{DynamicResource SecondaryTextBrush}"/><TextBox Text="{Binding CropRight}"/></StackPanel>
+                                    <StackPanel Grid.Column="6" Spacing="3"><TextBlock Text="下 (px)" FontSize="11.5" Foreground="{DynamicResource SecondaryTextBrush}"/><TextBox Text="{Binding CropBottom}"/></StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <Grid ColumnDefinitions="145,*" RowDefinitions="42,42,42,42,42">
+                                <TextBlock Text="画面旋转与翻转:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Spacing="14">
+                                    <ComboBox ItemsSource="{Binding RotationOptions}" SelectedItem="{Binding SelectedRotationOption}" Width="180">
+                                        <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <CheckBox Content="水平镜像翻转" IsChecked="{Binding FlipHorizontal}"/>
+                                    <CheckBox Content="垂直上下翻转" IsChecked="{Binding FlipVertical}"/>
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="1" Text="去隔行扫描:" VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding DeinterlaceOptions}" SelectedItem="{Binding SelectedDeinterlaceOption}" Width="240" HorizontalAlignment="Left">
+                                    <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <TextBlock Grid.Row="2" Text="HDR → SDR 转换:" VerticalAlignment="Center"/>
+                                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Spacing="14">
+                                    <CheckBox Content="启用 HDR 色调映射 (防止发灰)" IsChecked="{Binding HdrToSdr}"/>
+                                    <ComboBox ItemsSource="{Binding TonemapOptions}" SelectedItem="{Binding SelectedTonemapOption}" Width="200" IsEnabled="{Binding HdrToSdr}">
+                                        <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="3" Text="视频降噪 (hqdn3d):" VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding StrengthOptions}" SelectedItem="{Binding SelectedDenoiseOption}" Width="180" HorizontalAlignment="Left">
+                                    <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <TextBlock Grid.Row="4" Text="画面锐化 (unsharp):" VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding StrengthOptions}" SelectedItem="{Binding SelectedSharpenOption}" Width="180" HorizontalAlignment="Left">
+                                    <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Tab 5: Subtitles & Watermark -->
+            <TabItem Header="字幕与水印">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="6" Spacing="12">
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="字幕处理 (SRT / ASS / 内嵌字幕)" FontWeight="SemiBold"/>
+                                <Grid ColumnDefinitions="120,*">
+                                    <TextBlock Text="处理方式:" VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Column="1" ItemsSource="{Binding SubtitleModeOptions}" SelectedItem="{Binding SelectedSubtitleModeOption}" HorizontalAlignment="Stretch">
+                                        <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </Grid>
+                                <Grid ColumnDefinitions="120,*,Auto,Auto">
+                                    <TextBlock Text="外挂字幕文件:" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" Text="{Binding SubtitleFilePath}"/>
+                                    <Button Grid.Column="2" Content="浏览..." Command="{Binding BrowseSubtitleCommand}" Classes="toolbar-btn" Margin="6,0,0,0"/>
+                                    <Button Grid.Column="3" Content="清除" Command="{Binding ClearSubtitleCommand}" Classes="toolbar-btn" Margin="6,0,0,0"/>
+                                </Grid>
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="SRT 字体:" VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding SubtitleFontName}" Width="150"/>
+                                    <TextBlock Text="字号:" VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding SubtitleFontSize}" Width="55"/>
+                                    <TextBlock Text="描边:" VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding SubtitleOutline}" Width="55"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <CheckBox Content="启用图片水印 / 台标 (PNG 透明通道)" IsChecked="{Binding ImageWatermarkEnabled}" FontWeight="SemiBold"/>
+                                <StackPanel IsEnabled="{Binding ImageWatermarkEnabled}" Spacing="8">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBox Text="{Binding ImageWatermarkPath}"/>
+                                        <Button Grid.Column="1" Content="选择图片..." Command="{Binding BrowseImageWatermarkCommand}" Classes="toolbar-btn" Margin="8,0,0,0"/>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="180,16,*,16,*">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="水印位置" FontSize="11.5" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                            <ComboBox ItemsSource="{Binding WatermarkPositionOptions}" SelectedItem="{Binding SelectedWatermarkPositionOption}" HorizontalAlignment="Stretch">
+                                                <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="4">
+                                            <TextBlock Text="{Binding WatermarkScaleLabel}" FontSize="11.5" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                            <Slider Minimum="3" Maximum="50" Value="{Binding WatermarkScalePercent}" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="4" Spacing="4">
+                                            <TextBlock Text="{Binding WatermarkOpacityLabel}" FontSize="11.5" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                            <Slider Minimum="0.1" Maximum="1.0" Value="{Binding WatermarkOpacity}" TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <CheckBox Content="启用文字水印 (drawtext)" IsChecked="{Binding TextWatermarkEnabled}" FontWeight="SemiBold"/>
+                                <StackPanel IsEnabled="{Binding TextWatermarkEnabled}" Spacing="8">
+                                    <Grid ColumnDefinitions="*,10,80,10,140,10,130">
+                                        <TextBox Text="{Binding TextWatermarkContent}" Watermark="输入水印文字"/>
+                                        <TextBox Grid.Column="2" Text="{Binding TextWatermarkFontSize}" ToolTip.Tip="字体大小"/>
+                                        <ComboBox Grid.Column="4" ItemsSource="{Binding WatermarkColorOptions}" SelectedItem="{Binding SelectedTextWatermarkColorOption}" HorizontalAlignment="Stretch">
+                                            <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                        <ComboBox Grid.Column="6" ItemsSource="{Binding WatermarkPositionOptions}" SelectedItem="{Binding SelectedTextWatermarkPositionOption}" HorizontalAlignment="Stretch">
+                                            <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </Grid>
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <TextBlock Text="{Binding TextWatermarkOpacityLabel}" VerticalAlignment="Center"/>
+                                        <Slider Minimum="0.1" Maximum="1.0" Value="{Binding TextWatermarkOpacity}" Width="220" TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Tab 6: Presets & Advanced -->
+            <TabItem Header="预设与高级">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="6" Spacing="12">
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="预设管理 (保存 / 导出 / 导入)" FontWeight="SemiBold"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <ComboBox ItemsSource="{Binding Presets}" SelectedItem="{Binding SelectedPreset}" HorizontalAlignment="Stretch">
+                                        <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}"/></DataTemplate></ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0" Spacing="6">
+                                        <Button Content="载入" Command="{Binding LoadPresetCommand}" Classes="toolbar-btn"/>
+                                        <Button Content="另存为新预设" Command="{Binding SaveNewPresetCommand}" Classes="primary-btn"/>
+                                        <Button Content="覆盖" Command="{Binding OverwritePresetCommand}" Classes="toolbar-btn"/>
+                                        <Button Content="删除" Command="{Binding DeletePresetCommand}" Classes="danger-btn"/>
+                                        <Button Content="导入" Command="{Binding ImportPresetCommand}" Classes="toolbar-btn"/>
+                                        <Button Content="导出" Command="{Binding ExportPresetCommand}" Classes="toolbar-btn"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="自定义额外 FFmpeg 输出参数 (高级用户)" FontWeight="SemiBold"/>
+                                <TextBox Text="{Binding CustomExtraArgs}" FontFamily="Consolas, Menlo, monospace" Watermark="例如: -g 60 -bf 2"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="FFmpeg 工具链与硬件状态" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding HardwareStatusSummary}" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap"/>
+
+                                <Grid ColumnDefinitions="120,*,Auto">
+                                    <TextBlock Text="ffmpeg 路径:" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" Text="{Binding CustomFfmpegPath}" Watermark="留空自动搜索系统 PATH"/>
+                                    <Button Grid.Column="2" Content="浏览..." Command="{Binding BrowseFfmpegCommand}" Classes="toolbar-btn" Margin="6,0,0,0"/>
+                                </Grid>
+
+                                <Grid ColumnDefinitions="120,*,Auto">
+                                    <TextBlock Text="ffprobe 路径:" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" Text="{Binding CustomFfprobePath}" Watermark="留空自动搜索系统 PATH"/>
+                                    <Button Grid.Column="2" Content="浏览..." Command="{Binding BrowseFfprobeCommand}" Classes="toolbar-btn" Margin="6,0,0,0"/>
+                                </Grid>
+
+                                <Button Content="重新检测 FFmpeg 与硬件能力" Command="{Binding RedetectHardwareCommand}" Classes="toolbar-btn" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <!-- Pinned Live FFmpeg CLI Preview Strip -->
+        <Border Grid.Row="1" Classes="card" Margin="0,12,0,0" Padding="10">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <TextBlock Text="实时命令:" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBox Grid.Column="1" Text="{Binding CliPreview, Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas, Menlo, monospace" FontSize="11.5" BorderThickness="0" Background="Transparent"/>
+                <Button Grid.Column="2" Content="复制" Command="{Binding CopyCliCommand}" Classes="toolbar-btn" MinHeight="26" Padding="10,2" Margin="8,0,0,0"/>
+            </Grid>
+        </Border>
+
+        <!-- Dialog Footer -->
+        <Grid Grid.Row="2" Margin="0,12,0,0">
+            <Button Content="恢复默认设置" Command="{Binding ResetDefaultsCommand}" Classes="toolbar-btn" HorizontalAlignment="Left"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+                <Button Content="取消" IsCancel="True" Click="Cancel_Click" Classes="toolbar-btn" Width="96"/>
+                <Button Content="应用设置" Click="Apply_Click" IsDefault="True" Classes="primary-btn" Width="116"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

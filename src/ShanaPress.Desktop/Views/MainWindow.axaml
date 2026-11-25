@@ -1,0 +1,389 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ShanaPress.Desktop.Views.MainWindow"
+        Icon="avares://ShanaPress/Assets/app.ico"
+        Title="ShanaPress — 现代视频压缩工具"
+        Width="1340" Height="800"
+        MinWidth="1120" MinHeight="690"
+        WindowStartupLocation="CenterScreen"
+        DragDrop.AllowDrop="True">
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="F6" Command="{Binding OpenQuickSettingsCommand}"/>
+        <KeyBinding Gesture="Ctrl+O" Command="{Binding AddFilesCommand}"/>
+    </Window.KeyBindings>
+
+    <Grid Margin="14" RowDefinitions="Auto,Auto,*,Auto,Auto,Auto">
+
+        <!-- Row 0: Brand Header & Primary Action Toolbar -->
+        <Border Grid.Row="0" Classes="card" Padding="12,9" Margin="0,0,0,10">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0" Spacing="8">
+                    <Image Source="avares://ShanaPress/Assets/logo.png" Width="26" Height="26"/>
+                    <TextBlock Text="ShanaPress" FontSize="14.5" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <Border Width="1" Height="22" Background="{DynamicResource BorderBrush}"/>
+                </StackPanel>
+
+                <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Command="{Binding AddFilesCommand}" Classes="toolbar-btn" Padding="10,5" Margin="0,0,5,0" ToolTip.Tip="添加视频文件 (Ctrl+O)">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Path Data="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M13,18H11V14H7V12H11V8H13V12H17V14H13V18M13,9V3.5L18.5,9H13Z"
+                                  Fill="{DynamicResource PrimaryTextBrush}" Width="13" Height="13" Stretch="Uniform"/>
+                            <TextBlock Text="添加文件"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding AddFolderCommand}" Classes="toolbar-btn" Padding="10,5" Margin="0,0,5,0" ToolTip.Tip="递归添加文件夹内所有视频">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Path Data="M10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6H12L10,4Z"
+                                  Fill="{DynamicResource PrimaryTextBrush}" Width="13" Height="13" Stretch="Uniform"/>
+                            <TextBlock Text="添加文件夹"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding RemoveSelectedCommand}" Classes="toolbar-btn" Padding="9,5" Margin="0,0,5,0" ToolTip.Tip="移除选中项 (Delete)">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Path Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+                                  Fill="{DynamicResource SecondaryTextBrush}" Width="11" Height="11" Stretch="Uniform"/>
+                            <TextBlock Text="移除"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding ClearQueueCommand}" Classes="toolbar-btn" Padding="9,5" Margin="0,0,8,0" ToolTip.Tip="清空队列">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"
+                                  Fill="{DynamicResource SecondaryTextBrush}" Width="12" Height="12" Stretch="Uniform"/>
+                            <TextBlock Text="清空"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Border Width="1" Height="22" Background="{DynamicResource BorderBrush}" Margin="1,0,9,0"/>
+
+                    <Button Command="{Binding OpenQuickSettingsCommand}" Classes="primary-btn" Padding="11,5" Margin="0,0,5,0" ToolTip.Tip="打开快速参数设置 (F6)">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Path Data="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"
+                                  Fill="#FFFFFF" Width="13" Height="13" Stretch="Uniform"/>
+                            <TextBlock Text="快速设置 (F6)" Foreground="#FFFFFF"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding OpenTrimCropCommand}" Classes="toolbar-btn" Padding="10,5" Margin="0,0,5,0" ToolTip.Tip="对选中文件进行区间裁剪、黑边检测裁切与独立字幕">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Path Data="M9.64,7.64C9.87,7.14 10,6.59 10,6A4,4 0 0,0 6,2A4,4 0 0,0 2,6A4,4 0 0,0 6,10C6.59,10 7.14,9.87 7.64,9.64L10,12L7.64,14.36C7.14,14.13 6.59,14 6,14A4,4 0 0,0 2,18A4,4 0 0,0 6,22A4,4 0 0,0 10,18C10,17.41 9.87,16.86 9.64,16.36L12,14L19,21H22V20L9.64,7.64M6,8A2,2 0 0,1 4,6A2,2 0 0,1 6,4A2,2 0 0,1 8,6A2,2 0 0,1 6,8M6,20A2,2 0 0,1 4,18A2,2 0 0,1 6,16A2,2 0 0,1 8,18A2,2 0 0,1 6,20M12,12.5A0.5,0.5 0 0,1 11.5,12A0.5,0.5 0 0,1 12,11.5A0.5,0.5 0 0,1 12.5,12A0.5,0.5 0 0,1 12,12.5M19,3L13,9L15,11L22,4V3H19Z"
+                                  Fill="{DynamicResource PrimaryTextBrush}" Width="13" Height="13" Stretch="Uniform"/>
+                            <TextBlock Text="裁剪与预览"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding RunSampleTestCommand}" Classes="toolbar-btn" Padding="10,5" Margin="0,0,8,0" ToolTip.Tip="截取 10 秒片段试压并预估完整输出体积">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Path Data="M7,2V4H8V18A4,4 0 0,0 12,22A4,4 0 0,0 16,18V4H17V2H7M11,16C10.4,16 10,15.6 10,15C10,14.4 10.4,14 11,14C11.6,14 12,14.4 12,15C12,15.6 11.6,16 11,16M13,12C12.4,12 12,11.6 12,11C12,10.4 12.4,10 13,10C13.6,10 14,10.4 14,11C14,11.6 13.6,12 13,12M14,7H10V4H14V7Z"
+                                  Fill="{DynamicResource PrimaryTextBrush}" Width="13" Height="13" Stretch="Uniform"/>
+                            <TextBlock Text="快速试压 10s"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Border Width="1" Height="22" Background="{DynamicResource BorderBrush}" Margin="1,0,9,0"/>
+
+                    <Button Command="{Binding StartEncodeCommand}" Classes="success-btn" Margin="0,0,5,0" Padding="13,5">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Path Data="M8,5.14V19.14L19,12.14L8,5.14Z" Fill="#FFFFFF" Width="12" Height="12" Stretch="Uniform"/>
+                            <TextBlock Text="开始编码" Foreground="#FFFFFF"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding PauseResumeCommand}" Classes="toolbar-btn" Padding="10,5" Margin="0,0,5,0">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Path Data="M14,19H18V5H14M6,19H10V5H6V19Z" Fill="{DynamicResource PrimaryTextBrush}" Width="11" Height="11" Stretch="Uniform"/>
+                            <TextBlock Text="{Binding PauseResumeLabel}"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding StopEncodeCommand}" Classes="danger-btn" Padding="10,5">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Path Data="M18,18H6V6H18V18Z" Fill="#FFFFFF" Width="11" Height="11" Stretch="Uniform"/>
+                            <TextBlock Text="停止" Foreground="#FFFFFF"/>
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
+
+                <!-- Theme Toggle -->
+                <Button Grid.Column="2"
+                        Command="{Binding ToggleThemeCommand}"
+                        Classes="toolbar-btn"
+                        VerticalAlignment="Center"
+                        Padding="11,5"
+                        ToolTip.Tip="切换深色 / 浅色外观">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Path IsVisible="{Binding IsDarkTheme}"
+                              Data="M12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,2L14.39,5.42C13.65,5.15 12.84,5 12,5C11.16,5 10.35,5.15 9.61,5.42L12,2M3.34,7L7.5,6.65C6.9,7.16 6.36,7.78 5.94,8.5C5.5,9.24 5.25,10 5.11,10.79L3.34,7M3.36,17L5.12,13.23C5.26,14 5.53,14.78 5.95,15.5C6.37,16.24 6.91,16.86 7.5,17.37L3.36,17M20.65,7L18.88,10.79C18.74,10 18.47,9.23 18.05,8.5C17.63,7.78 17.1,7.15 16.5,6.64L20.65,7M20.64,17L16.5,17.36C17.09,16.85 17.62,16.22 18.04,15.5C18.46,14.77 18.73,14 18.87,13.21L20.64,17M12,22L9.59,18.56C10.33,18.83 11.14,19 12,19C12.82,19 13.63,18.83 14.37,18.56L12,22Z"
+                              Fill="{DynamicResource AccentSoftTextBrush}" Width="14" Height="14" Stretch="Uniform"/>
+                        <Path IsVisible="{Binding !IsDarkTheme}"
+                              Data="M12,3A9,9 0 0,0 3,12A9,9 0 0,0 12,21A9,9 0 0,0 21,12C21,11.5 20.96,11 20.87,10.5C20.22,11.42 19.15,12 17.95,12A4.95,4.95 0 0,1 13,7.05C13,5.85 13.58,4.78 14.5,4.13C14,4.04 13.5,4 13,4H12V3Z"
+                              Fill="{DynamicResource AccentSoftTextBrush}" Width="14" Height="14" Stretch="Uniform"/>
+                        <TextBlock Text="{Binding ThemeButtonText}"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Row 1: Preset Selector, Active Config Pill & GPU Hardware Badge -->
+        <Border Grid.Row="1" Classes="card" Padding="12,8" Margin="0,0,0,10">
+            <Grid ColumnDefinitions="Auto,270,*,Auto">
+                <TextBlock Text="当前预设:" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,8,0"/>
+                <ComboBox Grid.Column="1"
+                          ItemsSource="{Binding Presets}"
+                          SelectedItem="{Binding SelectedPreset}"
+                          IsEnabled="{Binding CanEditSettings}"
+                          HorizontalAlignment="Stretch">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <Button Grid.Column="2"
+                        Command="{Binding OpenQuickSettingsCommand}"
+                        Classes="summary-pill"
+                        Margin="12,0"
+                        ToolTip.Tip="点击打开快速设置 (F6) 修改压缩参数">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="{Binding ActiveSummaryText}"
+                                   Foreground="{DynamicResource AccentSoftTextBrush}"
+                                   FontWeight="SemiBold"
+                                   FontSize="12.5"
+                                   TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Center"/>
+                        <Path Grid.Column="1"
+                              Data="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"
+                              Fill="{DynamicResource AccentSoftTextBrush}"
+                              Width="12" Height="12" Stretch="Uniform" Margin="10,0,0,0" Opacity="0.8"/>
+                    </Grid>
+                </Button>
+
+                <Border Grid.Column="3"
+                        Background="{DynamicResource SuccessSoftBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="7"
+                        Padding="11,6"
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Path Data="M7,2V13H10V22L17,10H13L17,2H7Z"
+                              Fill="{DynamicResource SuccessBrush}"
+                              Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding HardwareBadgeText}"
+                                   Foreground="{DynamicResource SuccessBrush}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Row 2: Batch Queue DataGrid + Drag-Drop Empty Overlay -->
+        <Grid Grid.Row="2" Margin="0,0,0,10">
+            <DataGrid x:Name="QueueGrid"
+                      ItemsSource="{Binding QueueItems}"
+                      SelectedItem="{Binding SelectedQueueItem, Mode=TwoWay}"
+                      SelectionChanged="QueueGrid_SelectionChanged"
+                      DoubleTapped="QueueGrid_DoubleTapped">
+                <DataGrid.KeyBindings>
+                    <KeyBinding Gesture="Delete" Command="{Binding RemoveSelectedCommand}"/>
+                </DataGrid.KeyBindings>
+                <DataGrid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="裁剪与区间预览 (Trim &amp; Crop)" Command="{Binding OpenTrimCropCommand}"/>
+                        <MenuItem Header="快速试压 10 秒预估体积" Command="{Binding RunSampleTestCommand}"/>
+                        <MenuItem Header="查看媒体详细信息 (MediaInfo)" Command="{Binding ShowMediaInfoCommand}"/>
+                        <Separator/>
+                        <MenuItem Header="打开源文件所在文件夹" Command="{Binding OpenSelectedSourceFolderCommand}"/>
+                        <MenuItem Header="打开输出文件所在文件夹" Command="{Binding OpenSelectedOutputFolderCommand}"/>
+                        <Separator/>
+                        <MenuItem Header="重置选中状态为等待" Command="{Binding ResetSelectedStatusCommand}"/>
+                        <MenuItem Header="移除选中项" Command="{Binding RemoveSelectedCommand}"/>
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
+
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="文件名" Width="2*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0" Spacing="8">
+                                    <TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis" FontWeight="Medium" ToolTip.Tip="{Binding SourcePath}"/>
+                                    <Border Background="{DynamicResource AccentSoftBrush}"
+                                            CornerRadius="4"
+                                            Padding="6,1"
+                                            IsVisible="{Binding HasCustomEdits}">
+                                        <TextBlock Text="{Binding HasCustomEditsBadge}" Foreground="{DynamicResource AccentSoftTextBrush}" FontSize="11"/>
+                                    </Border>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="状态" Width="105">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Background="{DynamicResource BadgeBackgroundBrush}" CornerRadius="5" Padding="9,3" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="8,0">
+                                    <TextBlock Text="{Binding StatusText}" Foreground="{Binding Status, Converter={StaticResource StatusToBrush}}" FontSize="11.5" FontWeight="SemiBold"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="进度" Width="155">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid VerticalAlignment="Center" Margin="8,0">
+                                    <ProgressBar Value="{Binding ProgressPercent, Mode=OneWay}" Maximum="100" Height="17"/>
+                                    <TextBlock Text="{Binding ProgressText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" FontWeight="SemiBold"/>
+                                </Grid>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="体积变化 / 压缩率" Width="195">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0" Spacing="6">
+                                    <TextBlock Text="{Binding SizeComparisonText}" FontSize="12"/>
+                                    <TextBlock Text="{Binding CompressionRatioText}" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource SuccessBrush}" IsVisible="{Binding IsCompressionSaved}"/>
+                                    <TextBlock Text="{Binding CompressionRatioText}" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource WarningBrush}" IsVisible="{Binding IsCompressionLarger}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTextColumn Header="视频规格" Binding="{Binding VideoSummaryText}" Width="195"/>
+                    <DataGridTextColumn Header="时长" Binding="{Binding DurationText}" Width="72"/>
+                    <DataGridTextColumn Header="速度 / 剩余时间" Binding="{Binding SpeedEtaText}" Width="165"/>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- Empty Drag-Drop Overlay -->
+            <Border Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    IsVisible="{Binding QueueItems.Count, Converter={StaticResource CountZero}}">
+                <Grid Margin="28">
+                    <Rectangle Stroke="{DynamicResource BorderBrush}"
+                               StrokeThickness="1.5"
+                               StrokeDashArray="6,4"
+                               RadiusX="12"
+                               RadiusY="12"
+                               Fill="{DynamicResource CardBrush}"/>
+
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20">
+                        <Border Width="72" Height="72" CornerRadius="36" Background="{DynamicResource AccentSoftBrush}" HorizontalAlignment="Center" Margin="0,0,0,16">
+                            <Path Data="M19.35,10.04C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.04C2.34,8.36 0,10.91 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.04M14,13V17H10V13H7L12,8L17,13H14Z"
+                                  Fill="{DynamicResource AccentSoftTextBrush}" Width="34" Height="34" Stretch="Uniform"/>
+                        </Border>
+
+                        <TextBlock Text="拖入视频文件或文件夹到此处" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                        <TextBlock Text="支持批量队列压缩 · 硬件极速转码 · 按 F6 打开完整参数面板"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" FontSize="13" HorizontalAlignment="Center" Margin="0,0,0,14"/>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,18" Spacing="6">
+                            <Border Background="{DynamicResource BadgeBackgroundBrush}" CornerRadius="4" Padding="8,3">
+                                <TextBlock Text="MP4 / MKV / MOV" FontSize="11.5" Foreground="{DynamicResource SecondaryTextBrush}" FontWeight="SemiBold"/>
+                            </Border>
+                            <Border Background="{DynamicResource BadgeBackgroundBrush}" CornerRadius="4" Padding="8,3">
+                                <TextBlock Text="H.264 / HEVC / AV1" FontSize="11.5" Foreground="{DynamicResource SecondaryTextBrush}" FontWeight="SemiBold"/>
+                            </Border>
+                            <Border Background="{DynamicResource BadgeBackgroundBrush}" CornerRadius="4" Padding="8,3">
+                                <TextBlock Text="NVENC / VideoToolbox / VAAPI" FontSize="11.5" Foreground="{DynamicResource SecondaryTextBrush}" FontWeight="SemiBold"/>
+                            </Border>
+                            <Border Background="{DynamicResource BadgeBackgroundBrush}" CornerRadius="4" Padding="8,3">
+                                <TextBlock Text="2-Pass / 目标体积" FontSize="11.5" Foreground="{DynamicResource SecondaryTextBrush}" FontWeight="SemiBold"/>
+                            </Border>
+                        </StackPanel>
+
+                        <Button Content="选择视频文件..." Command="{Binding AddFilesCommand}" Classes="primary-btn" HorizontalAlignment="Center" Padding="22,8"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Row 3: Output & Execution Controls Bar -->
+        <Border Grid.Row="3" Classes="card" Padding="12,9" Margin="0,0,0,10">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10">
+                    <TextBlock Text="输出目录:" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <RadioButton Content="与源文件同目录" IsChecked="{Binding IsSameAsSource}" GroupName="OutDir" IsEnabled="{Binding CanEditSettings}"/>
+                    <RadioButton Content="自定义:" IsChecked="{Binding IsCustomFolder}" GroupName="OutDir" IsEnabled="{Binding CanEditSettings}"/>
+                </StackPanel>
+
+                <Grid Grid.Column="1" Margin="8,0,12,0" ColumnDefinitions="*,Auto,Auto">
+                    <TextBox Text="{Binding CustomOutputDirectory}" IsEnabled="{Binding IsCustomFolder}" Watermark="自定义输出路径"/>
+                    <Button Grid.Column="1" Content="浏览" Command="{Binding BrowseOutputFolderCommand}" Classes="toolbar-btn" MinHeight="30" Padding="10,4" Margin="6,0,0,0"/>
+                    <Button Grid.Column="2" Content="打开" Command="{Binding OpenOutputFolderCommand}" Classes="toolbar-btn" MinHeight="30" Padding="10,4" Margin="6,0,0,0"/>
+                </Grid>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Spacing="6">
+                    <TextBlock Text="命名:" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                    <TextBox Text="{Binding FileNameTemplate}" IsEnabled="{Binding CanEditSettings}" Width="166" ToolTip.Tip="支持占位符: {name} {codec} {preset} {date}"/>
+
+                    <ComboBox ItemsSource="{Binding ConflictPolicyOptions}" SelectedItem="{Binding SelectedConflictPolicyOption}" IsEnabled="{Binding CanEditSettings}" Width="140">
+                        <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <TextBlock Text="并发:" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" Margin="4,0,0,0"/>
+                    <ComboBox ItemsSource="{Binding ConcurrencyOptions}" SelectedItem="{Binding MaxConcurrency}" IsEnabled="{Binding CanEditSettings}" Width="60"/>
+
+                    <ComboBox ItemsSource="{Binding PostEncodeActionOptions}" SelectedItem="{Binding SelectedPostEncodeOption}" Width="142" Margin="4,0,0,0">
+                        <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate></ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Row 4: Collapsible CLI Preview & Log Drawer -->
+        <Border Grid.Row="4" Classes="card" Padding="10,6" Margin="0,0,0,10">
+            <Expander Header="FFmpeg 实时命令行预览与编码日志" IsExpanded="{Binding IsBottomPanelExpanded}" HorizontalAlignment="Stretch">
+                <TabControl SelectedIndex="{Binding BottomPanelTabIndex}" Height="165" Margin="0,8,0,0" Padding="4">
+                    <TabItem Header="FFmpeg 实时命令行预览">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBox Text="{Binding LiveCliPreview, Mode=OneWay}"
+                                     IsReadOnly="True"
+                                     TextWrapping="Wrap"
+                                     VerticalContentAlignment="Top"
+                                     FontFamily="Consolas, Menlo, monospace"
+                                     FontSize="12"
+                                     Padding="8"/>
+                            <Button Grid.Column="1" Content="复制命令" Command="{Binding CopyCliCommand}" Classes="toolbar-btn" VerticalAlignment="Top" Margin="8,0,0,0"/>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem Header="编码输出日志">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBox x:Name="LogTextBox"
+                                     Text="{Binding LogText, Mode=OneWay}"
+                                     IsReadOnly="True"
+                                     TextWrapping="Wrap"
+                                     VerticalContentAlignment="Top"
+                                     FontFamily="Consolas, Menlo, monospace"
+                                     FontSize="11.5"
+                                     Padding="8"/>
+                            <StackPanel Grid.Column="1" Margin="8,0,0,0" Spacing="6">
+                                <Button Content="复制日志" Command="{Binding CopyLogCommand}" Classes="toolbar-btn"/>
+                                <Button Content="清空日志" Command="{Binding ClearLogCommand}" Classes="toolbar-btn"/>
+                            </StackPanel>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+            </Expander>
+        </Border>
+
+        <!-- Row 5: Bottom Global Progress & Space Saved Bar -->
+        <Grid Grid.Row="5" ColumnDefinitions="*,Auto,240">
+            <TextBlock Text="{Binding OverallStatusText}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center"/>
+            <TextBlock Grid.Column="1" Text="{Binding SpaceSavedText}" Foreground="{DynamicResource SuccessBrush}" FontWeight="Bold" VerticalAlignment="Center" Margin="16,0"/>
+            <ProgressBar Grid.Column="2" Value="{Binding OverallProgressPercent, Mode=OneWay}" Maximum="100" Height="10" VerticalAlignment="Center"/>
+        </Grid>
+    </Grid>
+</Window>

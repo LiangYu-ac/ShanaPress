@@ -54,14 +54,34 @@ public sealed class HardwareCapabilities
     public bool HasQsvAv1 => WorkingEncoders.Contains("av1_qsv");
     public bool HasAnyQsv => HasQsvH264 || HasQsvHevc || HasQsvAv1;
 
+    public bool HasVideoToolboxH264 => WorkingEncoders.Contains("h264_videotoolbox");
+    public bool HasVideoToolboxHevc => WorkingEncoders.Contains("hevc_videotoolbox");
+    public bool HasAnyVideoToolbox => HasVideoToolboxH264 || HasVideoToolboxHevc;
+
+    public bool HasVaapiH264 => WorkingEncoders.Contains("h264_vaapi");
+    public bool HasVaapiHevc => WorkingEncoders.Contains("hevc_vaapi");
+    public bool HasVaapiAv1 => WorkingEncoders.Contains("av1_vaapi");
+    public bool HasAnyVaapi => HasVaapiH264 || HasVaapiHevc || HasVaapiAv1;
+
+    public bool HasAnyHardwareEncoder =>
+        HasAnyNvenc || HasAnyAmf || HasAnyQsv || HasAnyVideoToolbox || HasAnyVaapi;
+
     public string BuildBadgeText()
     {
         if (!HasFfmpeg)
         {
-            return "未检测到 FFmpeg — 请在快速设置中指定路径";
+            return "未检测到 FFmpeg — 请安装 FFmpeg 或在快速设置中指定路径";
         }
 
         var parts = new List<string>();
+        if (HasAnyVideoToolbox)
+        {
+            var codecs = new List<string>();
+            if (HasVideoToolboxH264) codecs.Add("H.264");
+            if (HasVideoToolboxHevc) codecs.Add("HEVC");
+            var macChip = GpuNames.FirstOrDefault() ?? "Apple";
+            parts.Add($"{macChip} VideoToolbox ({string.Join("/", codecs)})");
+        }
         if (HasAnyNvenc)
         {
             var codecs = new List<string>();
@@ -69,9 +89,17 @@ public sealed class HardwareCapabilities
             if (HasNvencHevc) codecs.Add("HEVC");
             if (HasNvencAv1) codecs.Add("AV1");
             var nvGpu = GpuNames.FirstOrDefault(g => g.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase)) ?? "NVIDIA GPU";
-            parts.Add(HasAnyAmf || HasAnyQsv
+            parts.Add(HasAnyAmf || HasAnyQsv || HasAnyVaapi
                 ? $"{nvGpu} (NVENC)"
                 : $"{nvGpu} (NVENC {string.Join("/", codecs)})");
+        }
+        if (HasAnyVaapi)
+        {
+            var codecs = new List<string>();
+            if (HasVaapiH264) codecs.Add("H.264");
+            if (HasVaapiHevc) codecs.Add("HEVC");
+            if (HasVaapiAv1) codecs.Add("AV1");
+            parts.Add($"VAAPI ({string.Join("/", codecs)})");
         }
         if (HasAnyAmf)
         {
@@ -105,7 +133,7 @@ public sealed class AppSettings
     public bool IsDarkTheme { get; set; } = true;
     public string CustomFfmpegPath { get; set; } = string.Empty;
     public string CustomFfprobePath { get; set; } = string.Empty;
-    public string SelectedPresetId { get; set; } = "builtin-nvenc-hevc";
+    public string SelectedPresetId { get; set; } = string.Empty;
     public int MaxConcurrency { get; set; } = 1;
     public PostEncodeAction PostEncodeAction { get; set; } = PostEncodeAction.None;
     public bool IsBottomPanelExpanded { get; set; } = false;
